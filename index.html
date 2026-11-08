@@ -101,6 +101,22 @@ body.locked .setrow2 .btn { opacity: .45; }
 .trk .lbody { display: block; padding: 10px 12px 10px 4px; text-align: left; }
 .bd { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-weight: 700; font-size: 14px; letter-spacing: .05em; }
 .b-ok { color: var(--ok); } .b-chg { color: var(--chg); } .b-drop { color: var(--drop); } .b-star { color: var(--accent); }
+
+.row.off { opacity: .42; background: var(--surface); border-left-color: var(--line); pointer-events: none; }
+.row.off .txt { color: var(--muted); }
+.fcount { font-weight: 700; font-size: 16px; padding: 4px 0 6px; letter-spacing: .04em; } .fcount.done { color: var(--ok); }
+.seg2 { display: flex; gap: 6px; margin: 8px 0; } .seg2 button { flex: 1; min-height: 46px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); color: var(--ink); font: inherit; font-weight: 600; }
+.seg2 button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.fpick { max-height: 34dvh; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
+.fp { display: block; width: 100%; text-align: left; font: inherit; font-size: 16px; line-height: 1.35; color: var(--ink); background: var(--surface); border: 0; border-bottom: 1px solid var(--line); border-left: 6px solid transparent; padding: 10px 10px; min-height: 48px; }
+.fp.act { color: var(--muted); } .fp.on { background: var(--raised); border-left-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); } .fp.anc { outline: 3px solid var(--accent); outline-offset: -3px; }
+.trl { display: flex; align-items: stretch; } .trl > .row { flex: 1; min-width: 0; }
+.gut { display: flex; flex: none; margin-right: 2px; } .gc { position: relative; width: 20px; }
+.gc .ln { position: absolute; left: 8px; top: 0; bottom: 8px; width: 0; border-left: 5px solid var(--accent); } .gc .ln.top { top: 18px; }
+.gc .ln.dash { border-left-style: dashed; } .gc .ln.dot { border-left: 3px dotted var(--accent); }
+.gc .sn { position: absolute; top: 0; left: 0; width: 20px; text-align: center; text-decoration: none; font-size: 12px; font-weight: 800; color: var(--accent); }
+.kflag { display: inline-block; margin: 6px 6px 0 0; padding: 3px 9px; border-radius: 4px; border: 2px solid var(--accent); color: var(--accent); font-weight: 800; font-size: 13px; letter-spacing: .05em; }
+.kflag.yes { background: var(--accent); color: var(--accent-ink); }
 .misfire { width: 100%; margin-top: 8px; min-height: 48px; }
 .qrow { display: flex; gap: 6px; margin-bottom: 8px; }
 .qrow input { flex: 1; min-width: 0; }
@@ -300,7 +316,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 23;
+  var APP_VER = 24;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -324,7 +340,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   function PKEY(id) { return 'linedscript.p.' + id; }
   function normaliseS(d) {
     d = d || {};
-    return { scenes: d.scenes || {}, takes: d.takes || {}, flags: d.flags || {}, fps: d.fps || 25, locked: !!d.locked, lastBackup: d.lastBackup || '', resumes: d.resumes || [], wraps: d.wraps || [], wrapped: !!d.wrapped, quick: d.quick || [], quickGone: d.quickGone || [], lockedSetups: d.lockedSetups || [] };
+    return { scenes: d.scenes || {}, takes: d.takes || {}, flags: d.flags || {}, fps: d.fps || 25, locked: !!d.locked, lastBackup: d.lastBackup || '', resumes: d.resumes || [], wraps: d.wraps || [], wrapped: !!d.wrapped, quick: d.quick || [], quickGone: d.quickGone || [], lockedSetups: d.lockedSetups || [], focus: d.focus || {} };
   }
   function readProject(id) { try { return JSON.parse(localStorage.getItem(PKEY(id)) || 'null'); } catch (e) { return null; } }
   function saveIndex() { try { localStorage.setItem(PIDX, JSON.stringify(PROJ)); } catch (e) {} }
@@ -577,6 +593,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     save('takes', t);
   }
   function rowHtml(l, t) {
+    if (!inFocus(t, l.id)) return '<div class="row off ' + (l.type === 'dialogue' ? 'dlg' : 'act') + '" data-id="' + esc(l.id) + '"><span class="mark"></span><span class="lbody">' + (l.type === 'dialogue' ? '<span class="cue">' + esc(l.who) + '</span>' : '') + '<span class="txt">' + esc(l.text) + '</span></span>' + (l.type === 'dialogue' ? '<span></span>' : '') + '</div>';
     var st = (t.marks || {})[l.id] || '', note = (t.notes || {})[l.id] || '';
     return '<div class="row ' + (l.type === 'dialogue' ? 'dlg' : 'act') + ' st-' + (st || (l.type === 'dialogue' ? 'todo' : 'none')) + '" data-id="' + esc(l.id) + '">' +
       '<button type="button" class="mark" data-act="cycle" aria-label="Line ' + esc(l.id) + ': ' + (st ? WORD[st] : (l.type === 'dialogue' ? 'still to say' : 'not logged')) + '. Tap to change.">' + ICON[st] + '</button>' +
@@ -608,7 +625,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       '<div class="counts"><b>' + tot.ok + '</b> said · <b>' + tot.chg + '</b> changed · <b>' + tot.drop + '</b> not said · <b class="togo">' + (tot.n - tot.ok) + '</b> to go' + (tot.star ? ' · <b class="best">★ ' + tot.star + '</b> best' : '') + '</div>';
   }
   function sumHtml(sc, t) {
-    return coverBar(sceneCover(sc).tot) +
+    var f = focusOf(t), fl = f ? '<div class="fcount' + (focusLeft(t) ? '' : ' done') + '">Focus: <b>' + (f.length - focusLeft(t)) + ' of ' + f.length + '</b> said' + (focusLeft(t) ? '' : ' · ready for Keeper') + '</div>' : '';
+    return fl + coverBar(sceneCover(sc).tot) +
       '<div class="qa"><button type="button" class="btn small" data-act="fill">Rest as said</button>' +
       '<button type="button" class="btn small" data-act="clear">Clear take</button>' +
       '<button type="button" class="btn small" data-act="filter">' + (UI.dialogueOnly ? 'Show action' : 'Dialogue only') + '</button></div>';
@@ -616,15 +634,35 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   /* Tracking tab: read only. Nothing here can be tapped to change a take. */
   function trackScreen() {
     var sc = curScene(); if (!sc) return emptyScript();
-    var cv = sceneCover(sc), bits = '';
+    var cv = sceneCover(sc);
     var head = '<div class="top">' + sceneButton(sc) + '</div><div class="sum">' + coverBar(cv.tot) +
       '<div class="qa"><button type="button" class="btn small" data-act="filter">' + (UI.dialogueOnly ? 'Show action' : 'Dialogue only') + '</button></div></div>' +
-      '<p class="notice">Read only. Green: said. Amber: only said with changes. Red: not said yet. Counts show how many takes.</p>';
-    var rows = vis(sc).map(function (l) {
-      if (l.type !== 'dialogue') return '<div class="row act st-none"><span class="mark"></span><span class="lbody"><span class="txt">' + esc(l.text) + '</span></span></div>';
-      var c = cv.per[l.id], st = c.ok ? 'ok' : c.chg ? 'chg' : c.drop ? 'drop' : 'todo';
-      var bd = (c.ok ? '<span class="b-ok">SAID ' + c.ok + '</span>' : '') + (c.chg ? '<span class="b-chg">CHANGED ' + c.chg + '</span>' : '') + (c.drop ? '<span class="b-drop">NOT SAID ' + c.drop + '</span>' : '') + (c.star ? '<span class="b-star">★ ' + c.star + '</span>' : '') || '<span class="b-drop">NOT SAID YET</span>';
-      return '<div class="row trk st-' + st + '"><span class="mark">' + ICON[st === 'todo' ? '' : st] + '</span><span class="lbody"><span class="cue">' + esc(l.who) + '</span><span class="txt">' + esc(l.text) + '</span><span class="bd">' + bd + '</span></span></div>';
+      '<p class="notice">Read only. Green: said. Amber: only said with changes. Red: not said yet. Blue line: a setup\'s focus. Solid: it has a keeper. Dashed: no keeper yet.</p>';
+    var L = vis(sc), ts = takesOf(sc.id), seen = {}, setups = [];
+    ts.forEach(function (t) { if (!seen[t.setup]) { seen[t.setup] = 1; var f = S.focus && S.focus[sc.id + '|' + t.setup]; if (f && f.length) setups.push({ n: t.setup, f: f }); } });
+    setups.forEach(function (u) {
+      u.idx = []; L.forEach(function (l, i) { if (u.f.indexOf(l.id) >= 0) u.idx.push(i); });
+      u.first = u.idx.length ? u.idx[0] : -1; u.last = u.idx.length ? u.idx[u.idx.length - 1] : -1;
+      u.keep = ts.filter(function (t) { return t.setup === u.n && t.result === 'circle'; }).map(function (t) { return t.take; });
+      var kt = ts.filter(function (t) { return t.setup === u.n && t.result === 'circle' && t.kname; })[0]; u.kname = kt ? kt.kname : '';
+    });
+    var rows = L.map(function (l, i) {
+      var gut = setups.map(function (u) {
+        if (u.first < 0 || i < u.first || i > u.last) return '<span class="gc"></span>';
+        var inf = u.f.indexOf(l.id) >= 0, cls = inf ? (u.keep.length ? 'ln solid' : 'ln dash') : 'ln dot';
+        return '<span class="gc"><i class="' + cls + (i === u.first ? ' top' : '') + '"></i>' + (i === u.first ? '<s class="sn">' + esc(u.n) + '</s>' : '') + '</span>';
+      }).join('');
+      var flag = setups.filter(function (u) { return u.last === i; }).map(function (u) {
+        return '<span class="kflag' + (u.keep.length ? ' yes' : '') + '">Setup ' + esc(u.n) + ' · ' + (u.keep.length ? 'KEEPER take ' + u.keep.map(esc).join(', ') + (u.kname ? ' · ' + esc(u.kname) : '') : 'no keeper yet') + '</span>';
+      }).join('');
+      var row;
+      if (l.type !== 'dialogue') row = '<div class="row act st-none"><span class="mark"></span><span class="lbody"><span class="txt">' + esc(l.text) + '</span>' + flag + '</span></div>';
+      else {
+        var c = cv.per[l.id], st = c.ok ? 'ok' : c.chg ? 'chg' : c.drop ? 'drop' : 'todo';
+        var bd = (c.ok ? '<span class="b-ok">SAID ' + c.ok + '</span>' : '') + (c.chg ? '<span class="b-chg">CHANGED ' + c.chg + '</span>' : '') + (c.drop ? '<span class="b-drop">NOT SAID ' + c.drop + '</span>' : '') + (c.star ? '<span class="b-star">★ ' + c.star + '</span>' : '') || '<span class="b-drop">NOT SAID YET</span>';
+        row = '<div class="row trk st-' + st + '"><span class="mark">' + ICON[st === 'todo' ? '' : st] + '</span><span class="lbody"><span class="cue">' + esc(l.who) + '</span><span class="txt">' + esc(l.text) + '</span><span class="bd">' + bd + '</span>' + flag + '</span></div>';
+      }
+      return setups.length ? '<div class="trl"><div class="gut">' + gut + '</div>' + row + '</div>' : row;
     }).join('');
     return head + '<div id="lines">' + rows + '</div>';
   }
@@ -747,7 +785,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   }
 
   /* ---------- changing marks ---------- */
-  function setMark(t, id, st) { t.marks = t.marks || {}; if (st) t.marks[id] = st; else delete t.marks[id]; save('takes', t); }
+  /* Focus: the lines a setup is after. Shared by every take of that setup, empty for the next setup. */
+  function fkey(t) { return t.sceneId + '|' + t.setup; }
+  function focusOf(t) { var f = t && S.focus && S.focus[fkey(t)]; return f && f.length ? f : null; }
+  function inFocus(t, id) { var f = focusOf(t); return !f || f.indexOf(id) >= 0; }
+  function focusLeft(t) { var f = focusOf(t); if (!f) return 0; return f.filter(function (id) { return (t.marks || {})[id] !== 'ok'; }).length; }
+  function keeperOk(t) {
+    var n = focusLeft(t); if (!n) return true;
+    toast('Not a keeper yet: ' + n + ' focus line' + (n === 1 ? '' : 's') + ' still to say in this take. Use Misfire.'); return false;
+  }
+  function recheckKeeper(t) { if (t.result === 'circle' && focusLeft(t)) { t.result = ''; save('takes', t); toast('Keeper removed: a focus line is no longer said'); } }
+  function setMark(t, id, st) { t.marks = t.marks || {}; if (st) t.marks[id] = st; else delete t.marks[id]; save('takes', t); recheckKeeper(t); }
   var SHOTS = ['CU', 'MID', 'LONG', 'WIDE', 'ESTABLISHING'], RIGS = ['TRIPOD', 'BAG', 'HAND HELD', 'DRONE'];
   function shotRig(t) { return [t.shot, t.rig].filter(Boolean).join(' · '); }
   function lockKey(t) { return t.sceneId + '|' + t.setup; }
@@ -775,17 +823,23 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         setTimeout(function () { try { kn.focus(); } catch (e) {} }, 100);
       });
   }
-  function newSetup(name) {
+  function newSetup(name, focus) {
     var sc = curScene(); if (!sc) return;
     if (wrapGuard()) return;
     var ts = takesOf(sc.id), mx = Math.max.apply(null, [0].concat(ts.map(function (x) { return parseInt(x.setup, 10) || 0; }))), setup = String(mx + 1);
     var lastAll = allTakesSorted().pop();
     var t = { id: uid('t'), sceneId: sc.id, setup: setup, take: 1, clip: lastAll ? nextClip(lastAll.clip) : '', desc: name || '', shot: '', rig: '', result: '', note: '', marks: {}, notes: {}, createdAt: new Date().toISOString() };
+    S.focus = S.focus || {}; if (focus && focus.length) S.focus[sc.id + '|' + setup] = focus.slice();
     save('takes', t); UI.takeId = t.id; render(); window.scrollTo(0, 0); toast('Setup ' + setup + ' · take 1');
   }
   function setupSheet() {
-    if (!curScene() || wrapGuard()) return;
+    var sc = curScene(); if (!sc || wrapGuard()) return;
+    var who = []; sc.lines.forEach(function (l) { if (l.type === 'dialogue' && l.who && who.indexOf(l.who) < 0) who.push(l.who); });
+    var sel = {}, mode = 'tap', anchor = -1;
     openSheet('<h3>New setup</h3><div><label for="sname">What is the setup?</label><input type="text" id="sname" autocomplete="off" maxlength="80" placeholder="e.g. Marlene walks"><div class="qchips" id="sq"></div></div>' +
+      '<div><label>Focus: lines this setup is after</label><div class="qchips" id="fwho">' + who.map(function (w, i) { return '<button type="button" data-w="' + i + '">' + esc(w) + '</button>'; }).join('') + '<button type="button" id="fall">All</button><button type="button" id="fnone">Clear</button></div>' +
+      '<div class="seg2"><button type="button" data-m="tap" class="on">Tap lines</button><button type="button" data-m="range">Range: first, last</button></div>' +
+      '<p class="notice" id="fcnt"></p><div class="fpick" id="fpick">' + sc.lines.map(function (l, i) { return '<button type="button" class="fp ' + (l.type === 'dialogue' ? 'dlg' : 'act') + '" data-i="' + i + '">' + (l.type === 'dialogue' ? '<b>' + esc(l.who) + '</b> ' : '<i>Action</i> ') + esc(l.text) + '</button>'; }).join('') + '</div></div>' +
       '<button type="button" class="btn primary" id="sgo">Start setup</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
       function (p) {
         var sn = $('#sname', p), sq = $('#sq', p);
@@ -797,8 +851,34 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
           }); });
         }
         paint(); sn.addEventListener('input', paint);
-        $('#sgo', p).addEventListener('click', function () { var v = sn.value.trim(); closeSheet(); newSetup(v); });
-        sn.addEventListener('keydown', function (e) { if (e.key === 'Enter') { var v = sn.value.trim(); closeSheet(); newSetup(v); } });
+        function fpaint() {
+          var n = 0;
+          p.querySelectorAll('.fp').forEach(function (b) { var i = Number(b.getAttribute('data-i')), on = !!sel[sc.lines[i].id]; if (on) n++; b.classList.toggle('on', on); b.classList.toggle('anc', i === anchor); });
+          $('#fcnt', p).textContent = n ? n + ' line' + (n === 1 ? '' : 's') + ' in focus.' + (anchor >= 0 ? ' Now tap the last line.' : '') : (anchor >= 0 ? 'Now tap the last line.' : 'Pick at least one line. Everything else is greyed out for this setup.');
+          p.querySelectorAll('#fwho [data-w]').forEach(function (b) { var w = who[Number(b.getAttribute('data-w'))], mine = sc.lines.filter(function (l) { return l.type === 'dialogue' && l.who === w; }); b.classList.toggle('on', mine.length > 0 && mine.every(function (l) { return sel[l.id]; })); });
+        }
+        p.querySelectorAll('#fwho [data-w]').forEach(function (b) { b.addEventListener('click', function () {
+          var w = who[Number(b.getAttribute('data-w'))], mine = sc.lines.filter(function (l) { return l.type === 'dialogue' && l.who === w; }), all = mine.every(function (l) { return sel[l.id]; });
+          mine.forEach(function (l) { if (all) delete sel[l.id]; else sel[l.id] = 1; }); anchor = -1; fpaint();
+        }); });
+        $('#fall', p).addEventListener('click', function () { sc.lines.forEach(function (l) { sel[l.id] = 1; }); anchor = -1; fpaint(); });
+        $('#fnone', p).addEventListener('click', function () { sel = {}; anchor = -1; fpaint(); });
+        p.querySelectorAll('[data-m]').forEach(function (b) { b.addEventListener('click', function () { mode = b.getAttribute('data-m'); anchor = -1; p.querySelectorAll('[data-m]').forEach(function (x) { x.classList.toggle('on', x === b); }); fpaint(); }); });
+        p.querySelectorAll('.fp').forEach(function (b) { b.addEventListener('click', function () {
+          var i = Number(b.getAttribute('data-i'));
+          if (mode === 'range') {
+            if (anchor < 0) anchor = i; else { var a = Math.min(anchor, i), z = Math.max(anchor, i); for (var k = a; k <= z; k++) sel[sc.lines[k].id] = 1; anchor = -1; }
+          } else { var id = sc.lines[i].id; if (sel[id]) delete sel[id]; else sel[id] = 1; }
+          fpaint();
+        }); });
+        fpaint();
+        function go() {
+          var ids = sc.lines.filter(function (l) { return sel[l.id]; }).map(function (l) { return l.id; });
+          if (!ids.length) { toast('Pick the lines this setup is after first.'); return; }
+          var v = sn.value.trim(); closeSheet(); newSetup(v, ids);
+        }
+        $('#sgo', p).addEventListener('click', go);
+        sn.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
         setTimeout(function () { try { sn.focus(); } catch (e) {} }, 100);
       });
   }
@@ -1071,7 +1151,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         });
         $('#above', p).addEventListener('click', function () {
           var stop = false, n = 0;
-          sc.lines.forEach(function (x) { if (stop) return; if (x.type === 'dialogue' && !(t.marks || {})[x.id]) { setMark(t, x.id, 'ok'); n++; } if (x.id === id) stop = true; });
+          sc.lines.forEach(function (x) { if (stop) return; if ((x.type === 'dialogue' || focusOf(t)) && inFocus(t, x.id) && !(t.marks || {})[x.id]) { setMark(t, x.id, 'ok'); n++; } if (x.id === id) stop = true; });
           toast(n + ' line' + (n === 1 ? '' : 's') + ' marked as said');
         });
         $('#edtxt', p).addEventListener('click', function () { $('#edbox', p).hidden = false; $('#ltext', p).value = l.text; $('#ltext', p).focus(); });
@@ -1142,7 +1222,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         p.querySelectorAll('[data-shot]').forEach(function (b) { b.addEventListener('click', function () { var v = b.getAttribute('data-shot'); t.shot = t.shot === v ? '' : v; save('takes', t); paintPick(); }); });
         p.querySelectorAll('[data-rig]').forEach(function (b) { b.addEventListener('click', function () { var v = b.getAttribute('data-rig'); t.rig = t.rig === v ? '' : v; save('takes', t); paintPick(); }); });
         paintRes();
-        p.querySelectorAll('[data-res]').forEach(function (b) { b.addEventListener('click', function () { t.result = b.getAttribute('data-res'); save('takes', t); paintRes(); }); });
+        p.querySelectorAll('[data-res]').forEach(function (b) { b.addEventListener('click', function () { var r = b.getAttribute('data-res'); if (r === 'circle' && t.result !== 'circle' && !keeperOk(t)) return; t.result = r; save('takes', t); paintRes(); }); });
         function sv() { t.note = tt.value.trim(); save('takes', t); }
         tt.addEventListener('input', sv); bindChips(p, tt, sv);
         $('#tdel', p).addEventListener('click', function () {
@@ -1378,7 +1458,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     if (withTakes) {
       for (var f of flagList()) { var o = JSON.parse(JSON.stringify(f)); if (f.hasPhoto) o.photo = await photoGet(f.id); flags.push(o); }
     }
-    return JSON.stringify({ linedscript: 1, name: (curProj() || {}).name || '', exported: new Date().toISOString(), fps: S.fps, resumes: S.resumes || [], wraps: S.wraps || [], wrapped: !!S.wrapped, lockedSetups: S.lockedSetups || [], scenes: sceneList(), takes: withTakes ? Object.keys(S.takes).map(function (k) { return S.takes[k]; }) : [], flags: flags });
+    return JSON.stringify({ linedscript: 1, name: (curProj() || {}).name || '', exported: new Date().toISOString(), fps: S.fps, resumes: S.resumes || [], wraps: S.wraps || [], wrapped: !!S.wrapped, lockedSetups: S.lockedSetups || [], focus: S.focus || {}, scenes: sceneList(), takes: withTakes ? Object.keys(S.takes).map(function (k) { return S.takes[k]; }) : [], flags: flags });
   }
   async function applyProject(d, name) {
     name = (name || d.name || 'Restored project').trim() || 'Restored project';
@@ -1389,7 +1469,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     } else {
       persistLocal(); PROJ.current = addProject(name);
     }
-    S = normaliseS(null); S.fps = d.fps || 25; S.resumes = d.resumes || []; S.wraps = d.wraps || []; S.wrapped = !!d.wrapped; S.lockedSetups = d.lockedSetups || [];
+    S = normaliseS(null); S.fps = d.fps || 25; S.resumes = d.resumes || []; S.wraps = d.wraps || []; S.wrapped = !!d.wrapped; S.lockedSetups = d.lockedSetups || []; S.focus = d.focus || {};
     d.scenes.forEach(function (sc) { if (sc && sc.id && Array.isArray(sc.lines)) S.scenes[sc.id] = sc; });
     (d.takes || []).forEach(function (t) { if (t && t.id && t.sceneId && S.scenes[t.sceneId]) S.takes[t.id] = t; });
     for (var f of (d.flags || [])) {
@@ -1518,7 +1598,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
           persistLocal(); closeSheet(); toast('Setup ' + n + (on ? ' unlocked' : ' locked'));
         });
     },
-    keeper: function () { keeperSheet(); },
+    keeper: function () { var t = curTake(); if (t && t.result !== 'circle' && !keeperOk(t)) return; keeperSheet(); },
     newsetup: function () {
       var last = allTakesSorted().pop();
       if (last && !S.wrapped && new Date(last.createdAt).toDateString() === new Date().toDateString() && !Object.keys(S.takes).some(function (k) { var x = S.takes[k]; return x.sceneId === last.sceneId && x.setup === last.setup && x.result === 'circle'; })) {
@@ -1562,11 +1642,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     takesheet: function () { takeSheet(); },
     prevtake: function () { moveTake(-1); },
     nexttake: function () { moveTake(1); },
-    cycle: function (el) { var t = curTake(); if (!t) return; var id = el.closest('.row').getAttribute('data-id'); setMark(t, id, NEXT[(t.marks || {})[id] || '']); repaintRow(id); },
+    cycle: function (el) { var t = curTake(); if (!t) return; var id = el.closest('.row').getAttribute('data-id'); var was = t.result; setMark(t, id, NEXT[(t.marks || {})[id] || '']); if (was !== t.result) render(); else repaintRow(id); },
     open: function (el) { lineSheet(el.closest('.row').getAttribute('data-id')); },
     star: function (el) { var t = curTake(); if (!t) return; var id = el.closest('.row').getAttribute('data-id'); toggleStar(t, id); repaintRow(id); },
-    fill: function () { var sc = curScene(), t = curTake(); if (!t) return; var n = 0; vis(sc).forEach(function (l) { if (l.type === 'dialogue' && !(t.marks || {})[l.id]) { t.marks = t.marks || {}; t.marks[l.id] = 'ok'; n++; } }); save('takes', t); render(); toast(n + ' line' + (n === 1 ? '' : 's') + ' marked as said'); },
-    clear: function () { var t = curTake(); if (!t) return; guard('Clear this take?', 'You are about to clear every mark, note and star in this take. Are you sure?', 'The take itself stays.', function () { t.marks = {}; t.notes = {}; t.stars = {}; save('takes', t); render(); toast('Take cleared'); }); },
+    fill: function () { var sc = curScene(), t = curTake(); if (!t) return; var n = 0; vis(sc).forEach(function (l) { if ((l.type === 'dialogue' || focusOf(t)) && inFocus(t, l.id) && !(t.marks || {})[l.id]) { t.marks = t.marks || {}; t.marks[l.id] = 'ok'; n++; } }); save('takes', t); render(); toast(n + ' line' + (n === 1 ? '' : 's') + ' marked as said'); },
+    clear: function () { var t = curTake(); if (!t) return; guard('Clear this take?', 'You are about to clear every mark, note and star in this take. Are you sure?', 'The take itself stays.', function () { t.marks = {}; t.notes = {}; t.stars = {}; if (t.result === 'circle' && focusOf(t)) t.result = ''; save('takes', t); render(); toast('Take cleared'); }); },
     filter: function () { UI.dialogueOnly = !UI.dialogueOnly; render(); },
     logview: function (el) { UI.logView = el.getAttribute('data-v'); render(); },
     gotake: function (el) {
