@@ -316,7 +316,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 25;
+  var APP_VER = 26;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -806,7 +806,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     openSheet('<h3>' + (isK ? 'Keeper' : 'New keeper') + '</h3><div><label for="kname">What is it a keeper for?</label><input type="text" id="kname" autocomplete="off" maxlength="80" placeholder="e.g. Wetnail with wine"><div class="qchips" id="kq"></div></div>' +
       '<button type="button" class="btn primary" id="ksave">' + (isK ? 'Save' : 'Save keeper') + '</button>' + (isK ? '<button type="button" class="btn danger" id="krem">Remove keeper</button>' : '<button type="button" class="btn" id="kskip">Skip, no name</button>') + '<button type="button" class="btn" data-act="closesheet">Cancel</button>',
       function (p) {
-        var kn = $('#kname', p), kq = $('#kq', p); kn.value = isK ? (t.kname || '') : (t.desc || '');
+        var kn = $('#kname', p), kq = $('#kq', p); var sib = takesOf(t.sceneId).filter(function (x) { return x.setup === t.setup; }), sd = ''; sib.forEach(function (x) { if (x.kname) sd = x.kname; else if (x.desc && !sd) sd = x.desc; });
+        kn.value = t.kname || t.desc || sd;
         function paint() {
           kq.innerHTML = (S.quick || []).map(function (x) { return '<button type="button" data-q="' + esc(x) + '"' + ((' ' + kn.value.toLowerCase() + ' ').indexOf(' ' + x.toLowerCase() + ' ') >= 0 ? ' class="on"' : '') + '>' + esc(x) + '</button>'; }).join('');
           kq.querySelectorAll('[data-q]').forEach(function (b) { b.addEventListener('click', function () {
@@ -875,7 +876,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         function go() {
           var ids = sc.lines.filter(function (l) { return sel[l.id]; }).map(function (l) { return l.id; });
           if (!ids.length) { toast('Pick the lines this setup is after first.'); return; }
-          var v = sn.value.trim(); closeSheet(); newSetup(v, ids);
+          var v = sn.value.trim(); if (!v) { var nm = []; sc.lines.forEach(function (l) { if (sel[l.id] && l.type === 'dialogue' && l.who && nm.indexOf(l.who) < 0) nm.push(l.who); }); v = nm.join(' & '); } closeSheet(); newSetup(v, ids);
         }
         $('#sgo', p).addEventListener('click', go);
         sn.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
