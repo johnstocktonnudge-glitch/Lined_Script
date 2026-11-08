@@ -97,6 +97,10 @@ body.locked .setrow2 .btn { opacity: .45; }
 #ctlov { position: fixed; inset: 0; z-index: 25; }
 #ctlov .scrim2 { position: absolute; inset: 0; background: rgba(0, 0, 0, .55); }
 #ctlov .ovp { position: relative; margin: 0 auto; max-width: 640px; max-height: 88vh; overflow-y: auto; background: var(--bg); border-bottom: 2px solid var(--ink); padding: calc(env(safe-area-inset-top, 0px) + 44px) 12px 12px; }
+.trk { grid-template-columns: 58px minmax(0, 1fr); }
+.trk .lbody { display: block; padding: 10px 12px 10px 4px; text-align: left; }
+.bd { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-weight: 700; font-size: 14px; letter-spacing: .05em; }
+.b-ok { color: var(--ok); } .b-chg { color: var(--chg); } .b-drop { color: var(--drop); } .b-star { color: var(--accent); }
 .misfire { width: 100%; margin-top: 8px; min-height: 48px; }
 .qrow { display: flex; gap: 6px; margin-bottom: 8px; }
 .qrow input { flex: 1; min-width: 0; }
@@ -296,7 +300,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 22;
+  var APP_VER = 23;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -527,6 +531,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TABS = [
     { id: 'take', label: 'Take', svg: '<svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M3 9h20v13H3zM3 9l3-5h5l-3 5M12 9l3-5h5l-3 5"/></svg>' },
     { id: 'log', label: 'Log', svg: '<svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h18M4 13h18M4 20h11"/></svg>' },
+    { id: 'track', label: 'Track', svg: '<svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l2.5 2.5L11 5M4 15l2.5 2.5L11 13M4 23l2.5-2.5M14 7h8M14 15h8M14 21h8"/></svg>' },
     { id: 'script', label: 'Script', svg: '<svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M6 3h10l5 5v15H6zM16 3v5h5M10 13h7M10 17h7"/></svg>' }
   ];
   function paintTabs() {
@@ -579,15 +584,49 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       (l.type === 'dialogue' ? '<span class="cue">' + esc(l.who) + '</span>' : '') +
       '<span class="txt">' + esc(l.text) + '</span>' + (note ? '<span class="nt">' + esc(note) + '</span>' : '') + '</button>' + (l.type === 'dialogue' ? starBtn(l, t) : '') + '</div>';
   }
+  /* Whole-scene coverage: every take in the scene counts, except misfires. */
+  function sceneCover(sc) {
+    var per = {}, tot = { n: 0, ok: 0, chg: 0, drop: 0, none: 0, star: 0 };
+    sc.lines.forEach(function (l) { per[l.id] = { ok: 0, chg: 0, drop: 0, star: 0 }; });
+    takesOf(sc.id).forEach(function (t) {
+      if (t.result === 'misfire') return;
+      sc.lines.forEach(function (l) {
+        var m = (t.marks || {})[l.id]; if (m && per[l.id] && per[l.id][m] !== undefined) per[l.id][m]++;
+        if ((t.stars || {})[l.id]) per[l.id].star++;
+      });
+    });
+    sc.lines.forEach(function (l) {
+      if (l.type !== 'dialogue') return; var c = per[l.id]; tot.n++;
+      if (c.ok) tot.ok++; else if (c.chg) tot.chg++; else if (c.drop) tot.drop++; else tot.none++;
+      if (c.star) tot.star++;
+    });
+    return { per: per, tot: tot };
+  }
+  function coverBar(tot) {
+    var n = tot.n || 1, pct = function (x) { return (x / n * 100).toFixed(1) + '%'; };
+    return '<div class="meter" aria-hidden="true"><i class="m-ok" style="width:' + pct(tot.ok) + '"></i><i class="m-chg" style="width:' + pct(tot.chg) + '"></i><i class="m-drop" style="width:' + pct(tot.drop) + '"></i></div>' +
+      '<div class="counts"><b>' + tot.ok + '</b> said · <b>' + tot.chg + '</b> changed · <b>' + tot.drop + '</b> not said · <b class="togo">' + (tot.n - tot.ok) + '</b> to go' + (tot.star ? ' · <b class="best">★ ' + tot.star + '</b> best' : '') + '</div>';
+  }
   function sumHtml(sc, t) {
-    var c = tally(sc, t), n = c.ok + c.chg + c.drop + c.none || 1;
-    var stars = vis(sc).filter(function (l) { return (t.stars || {})[l.id]; }).length;
-    var pct = function (x) { return (x / n * 100).toFixed(1) + '%'; };
-    return '<div class="meter" aria-hidden="true"><i class="m-ok" style="width:' + pct(c.ok) + '"></i><i class="m-chg" style="width:' + pct(c.chg) + '"></i><i class="m-drop" style="width:' + pct(c.drop) + '"></i></div>' +
-      '<div class="counts"><b>' + c.ok + '</b> said · <b>' + c.chg + '</b> changed · <b>' + c.drop + '</b> not said · <b class="togo">' + c.none + '</b> to go' + (stars ? ' · <b class="best">★ ' + stars + '</b> best' : '') + '</div>' +
+    return coverBar(sceneCover(sc).tot) +
       '<div class="qa"><button type="button" class="btn small" data-act="fill">Rest as said</button>' +
       '<button type="button" class="btn small" data-act="clear">Clear take</button>' +
       '<button type="button" class="btn small" data-act="filter">' + (UI.dialogueOnly ? 'Show action' : 'Dialogue only') + '</button></div>';
+  }
+  /* Tracking tab: read only. Nothing here can be tapped to change a take. */
+  function trackScreen() {
+    var sc = curScene(); if (!sc) return emptyScript();
+    var cv = sceneCover(sc), bits = '';
+    var head = '<div class="top">' + sceneButton(sc) + '</div><div class="sum">' + coverBar(cv.tot) +
+      '<div class="qa"><button type="button" class="btn small" data-act="filter">' + (UI.dialogueOnly ? 'Show action' : 'Dialogue only') + '</button></div></div>' +
+      '<p class="notice">Read only. Green: said. Amber: only said with changes. Red: not said yet. Counts show how many takes.</p>';
+    var rows = vis(sc).map(function (l) {
+      if (l.type !== 'dialogue') return '<div class="row act st-none"><span class="mark"></span><span class="lbody"><span class="txt">' + esc(l.text) + '</span></span></div>';
+      var c = cv.per[l.id], st = c.ok ? 'ok' : c.chg ? 'chg' : c.drop ? 'drop' : 'todo';
+      var bd = (c.ok ? '<span class="b-ok">SAID ' + c.ok + '</span>' : '') + (c.chg ? '<span class="b-chg">CHANGED ' + c.chg + '</span>' : '') + (c.drop ? '<span class="b-drop">NOT SAID ' + c.drop + '</span>' : '') + (c.star ? '<span class="b-star">★ ' + c.star + '</span>' : '') || '<span class="b-drop">NOT SAID YET</span>';
+      return '<div class="row trk st-' + st + '"><span class="mark">' + ICON[st === 'todo' ? '' : st] + '</span><span class="lbody"><span class="cue">' + esc(l.who) + '</span><span class="txt">' + esc(l.text) + '</span><span class="bd">' + bd + '</span></span></div>';
+    }).join('');
+    return head + '<div id="lines">' + rows + '</div>';
   }
   function takeScreen() {
     var sc = curScene(); if (!sc) return emptyScript();
@@ -694,7 +733,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     if (!ready.scenes || !ready.takes) { el.innerHTML = '<div class="empty"><p>Loading your script…</p></div>'; return; }
     var cp = curProj();
     el.innerHTML = (cp ? '<div class="projbar"><button type="button" data-act="projects"><span>Project</span><b>' + esc(cp.name) + '</b><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button></div>' : '') +
-      (UI.tab === 'take' ? takeScreen() : UI.tab === 'log' ? logScreen() : scriptScreen());
+      (UI.tab === 'take' ? takeScreen() : UI.tab === 'log' ? logScreen() : UI.tab === 'track' ? trackScreen() : scriptScreen());
     saveUI(); updateTab();
   }
   var tabRaf = 0; window.addEventListener('scroll', function () { if (!tabRaf) tabRaf = requestAnimationFrame(function () { tabRaf = 0; updateTab(); }); }, { passive: true });

@@ -1,6 +1,6 @@
 /* Lined Script service worker: keeps the app working with no signal.
    Change CACHE (v1 -> v2) whenever the app files change so phones pick up the new version. */
-var CACHE = 'lined-script-v22';
+var CACHE = 'lined-script-v23';
 var FONTS = 'lined-script-fonts';
 var CORE = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'pdf.js', 'pdf.worker.js'];
 
