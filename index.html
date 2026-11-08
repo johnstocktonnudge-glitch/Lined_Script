@@ -110,11 +110,11 @@ body.locked .setrow2 .btn { opacity: .45; }
 .fpick { max-height: 34dvh; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
 .fp { display: block; width: 100%; text-align: left; font: inherit; font-size: 16px; line-height: 1.35; color: var(--ink); background: var(--surface); border: 0; border-bottom: 1px solid var(--line); border-left: 6px solid transparent; padding: 10px 10px; min-height: 48px; }
 .fp.act { color: var(--muted); } .fp.on { background: var(--raised); border-left-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); } .fp.anc { outline: 3px solid var(--accent); outline-offset: -3px; }
-.trl { display: flex; align-items: stretch; } .trl > .row { flex: 1; min-width: 0; }
-.gut { display: flex; flex: none; margin-right: 2px; } .gc { position: relative; width: 20px; }
-.gc .ln { position: absolute; left: 8px; top: 0; bottom: 8px; width: 0; border-left: 5px solid var(--accent); } .gc .ln.top { top: 18px; }
+.trl { position: relative; } .trl .lbody { padding-right: var(--g, 12px) !important; }
+.gut { position: absolute; right: 2px; top: 0; bottom: 0; display: flex; flex-direction: row-reverse; pointer-events: none; z-index: 2; } .gc { position: relative; width: 14px; }
+.gc .ln { position: absolute; left: 5px; top: 0; bottom: -8px; width: 0; border-left: 4px solid var(--accent); } .gc .ln.top { top: 16px; }
 .gc .ln.dash { border-left-style: dashed; } .gc .ln.dot { border-left: 3px dotted var(--accent); }
-.gc .sn { position: absolute; top: 0; left: 0; width: 20px; text-align: center; text-decoration: none; font-size: 12px; font-weight: 800; color: var(--accent); }
+.gc .sn { position: absolute; top: 0; left: 0; width: 14px; text-align: center; text-decoration: none; font-size: 12px; font-weight: 800; color: var(--accent); }
 .kflag { display: inline-block; margin: 6px 6px 0 0; padding: 3px 9px; border-radius: 4px; border: 2px solid var(--accent); color: var(--accent); font-weight: 800; font-size: 13px; letter-spacing: .05em; }
 .kflag.yes { background: var(--accent); color: var(--accent-ink); }
 .misfire { width: 100%; margin-top: 8px; min-height: 48px; }
@@ -316,7 +316,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 24;
+  var APP_VER = 25;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -662,7 +662,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         var bd = (c.ok ? '<span class="b-ok">SAID ' + c.ok + '</span>' : '') + (c.chg ? '<span class="b-chg">CHANGED ' + c.chg + '</span>' : '') + (c.drop ? '<span class="b-drop">NOT SAID ' + c.drop + '</span>' : '') + (c.star ? '<span class="b-star">★ ' + c.star + '</span>' : '') || '<span class="b-drop">NOT SAID YET</span>';
         row = '<div class="row trk st-' + st + '"><span class="mark">' + ICON[st === 'todo' ? '' : st] + '</span><span class="lbody"><span class="cue">' + esc(l.who) + '</span><span class="txt">' + esc(l.text) + '</span><span class="bd">' + bd + '</span>' + flag + '</span></div>';
       }
-      return setups.length ? '<div class="trl"><div class="gut">' + gut + '</div>' + row + '</div>' : row;
+      return setups.length ? '<div class="trl" style="--g:' + (setups.length * 14 + 12) + 'px"><div class="gut">' + gut + '</div>' + row + '</div>' : row;
     }).join('');
     return head + '<div id="lines">' + rows + '</div>';
   }
