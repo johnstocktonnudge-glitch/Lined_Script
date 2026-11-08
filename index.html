@@ -1,0 +1,1584 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lined Script</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#12171c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lined Script">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); color-scheme: light; }
+body { margin: 0; }
+
+/* Layout: one phone column. Sticky take bar on top, thumb-height tabs at the bottom, sheets slide up for notes.
+   Look: a continuity sheet. Cool paper greys, a stage-board blue for actions, and green / amber / red that
+   always travel with a shape (tick, tilde, cross) so status never depends on colour alone. */
+:root {
+  --bg: #e7eaee;
+  --surface: #ffffff;
+  --raised: #f1f3f6;
+  --ink: #12171c;
+  --muted: #56626e;
+  --line: #c8cfd6;
+  --accent: #2a52c9;
+  --accent-ink: #ffffff;
+  --ok: #17803f;   --ok-bg: #ddf1e4;
+  --chg: #9c5f00;  --chg-bg: #faeccb;
+  --drop: #bf2c22; --drop-bg: #fadcd9;
+  --hl: #dfe7fb;
+  --ui: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --script: 'Courier Prime', 'Courier New', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1013; --surface: #171b20; --raised: #1f242a; --ink: #e8ecf0; --muted: #97a3af; --line: #2c343c;
+    --accent: #8aa9ff; --accent-ink: #0b1430;
+    --ok: #4cc27a; --ok-bg: #15301f; --chg: #e8b34a; --chg-bg: #3a2d10; --drop: #ff7a6e; --drop-bg: #3d1b18;
+    --hl: #1e2a48; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1013; --surface: #171b20; --raised: #1f242a; --ink: #e8ecf0; --muted: #97a3af; --line: #2c343c;
+  --accent: #8aa9ff; --accent-ink: #0b1430;
+  --ok: #4cc27a; --ok-bg: #15301f; --chg: #e8b34a; --chg-bg: #3a2d10; --drop: #ff7a6e; --drop-bg: #3d1b18;
+  --hl: #1e2a48; color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--ui); font-size: 18px; letter-spacing: .01em;
+  padding-block: 10px 110px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+body.noscroll { overflow: hidden; }
+.lockbar { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+.lockbar b { letter-spacing: .04em; text-transform: uppercase; }
+/* projects */
+.projbar { margin: 0 0 8px; }
+.projbar button { width: 100%; min-height: 40px; display: flex; align-items: center; gap: 8px; text-align: left; padding: 0 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; font-size: 16px; }
+.projbar span { color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-size: 13px; flex: none; }
+.projbar b { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+.projbar svg { flex: none; }
+.pj { display: block; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
+.pj.cur { border-color: var(--accent); border-width: 2px; }
+.pj .pn { font-size: 22px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; overflow-wrap: anywhere; }
+.pj .pm { color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.flagsum.warn { border: 2px solid var(--chg); color: var(--chg); }
+/* sync flags + camera */
+.flagrow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+.flagrow .btn { min-height: 56px; padding: 0 6px; font-size: 16px; line-height: 1.1; }
+.wrapbtn { width: 100%; margin-bottom: 8px; }
+.daylog { margin: 0 0 12px; font-size: 14px; }
+.daylog .dl { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.setrow { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; margin-top: 8px; }
+.setrow .btn { min-height: 56px; font-size: 18px; }
+body.locked .setrow .btn { opacity: .45; }
+.fixed { display: block; font-size: 22px; font-weight: 700; padding: 6px 0; }
+.setrow2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.setrow2 .btn { min-height: 48px; }
+.keeper.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+body.locked .setrow2 .btn { opacity: .45; }
+.ss { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+.lockb { flex: none; min-height: 40px; }
+.lockb.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.ss .nok { color: var(--drop); }
+#ctab { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 4px); left: 50%; transform: translateX(-50%); z-index: 22; min-height: 34px; max-width: 86vw; padding: 0 16px; border-radius: 17px; border: 1px solid var(--ink); background: var(--surface); color: var(--ink); font-weight: 700; font-size: 15px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#ctab[hidden], #ctlov[hidden] { display: none; }
+#ctlov { position: fixed; inset: 0; z-index: 25; }
+#ctlov .scrim2 { position: absolute; inset: 0; background: rgba(0, 0, 0, .55); }
+#ctlov .ovp { position: relative; margin: 0 auto; max-width: 640px; max-height: 88vh; overflow-y: auto; background: var(--bg); border-bottom: 2px solid var(--ink); padding: calc(env(safe-area-inset-top, 0px) + 44px) 12px 12px; }
+.misfire { width: 100%; margin-top: 8px; min-height: 48px; }
+.qrow { display: flex; gap: 6px; margin-bottom: 8px; }
+.qrow input { flex: 1; min-width: 0; }
+.qrow button { min-width: 44px; padding: 0 8px; }
+.flagsum { width: 100%; text-align: left; margin-bottom: 12px; }
+.fl { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: center; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px; margin-bottom: 8px; }
+.fl img, .fl .noimg { width: 72px; height: 72px; object-fit: cover; border-radius: 4px; background: var(--raised); }
+.fl .k { font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: 18px; }
+.fl .tc { font-family: var(--script); font-size: 18px; } .fl .need { color: var(--chg); font-weight: 600; }
+.fl .when { color: var(--muted); font-variant-numeric: tabular-nums; }
+.fphoto { width: 100%; max-height: 42dvh; object-fit: contain; background: #000; border-radius: 6px; }
+.fphoto.big { max-height: none; }
+.tcin { font-family: var(--script); font-size: 30px; letter-spacing: .08em; text-align: center; width: 100%; min-height: 56px; border: 2px solid var(--line); border-radius: 6px; background: var(--raised); color: var(--ink); }
+.tcin.bad { border-color: var(--drop); }
+#cam { position: fixed; inset: 0; z-index: 60; background: #000; display: flex; flex-direction: column; color: #fff; }
+#cam video { flex: 1 1 auto; min-height: 0; width: 100%; object-fit: cover; background: #000; }
+#cam .cbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); background: #000; }
+#cam .shutter { width: 76px; height: 76px; border-radius: 50%; border: 5px solid #fff; background: #d4423a; }
+#cam .ctitle { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); left: 0; right: 0; text-align: center; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; text-shadow: 0 1px 4px #000; }
+#cam .cmsg { position: absolute; left: 16px; right: 16px; top: 38%; text-align: center; }
+/* High contrast (default on): pure black, white text, heavy borders, for dark sets */
+:root.hc { --bg: #000; --surface: #000; --raised: #14181d; --ink: #fff; --muted: #e3e8ed; --line: #8995a1;
+  --accent: #b4c8ff; --accent-ink: #000; --ok: #62ff9d; --ok-bg: #04351a; --chg: #ffd84d; --chg-bg: #4a3600; --drop: #ff9488; --drop-bg: #52100a; --hl: #1b2f66; color-scheme: dark; }
+.hc .row { border-width: 2px; border-left-width: 12px; }
+.hc .row.st-ok { border-color: var(--ok); } .hc .row.st-chg { border-color: var(--chg); } .hc .row.st-todo, .hc .row.st-drop { border-color: var(--drop); }
+.hc .row.act .txt { color: var(--ink); }
+.hc .btn, .hc .card { border-width: 2px; border-color: var(--muted); }
+.hc .btn.primary { border-color: var(--accent); } .hc .btn.danger { border-color: var(--drop); }
+.hc .chip { border-width: 2px; }
+.hc ::placeholder { color: #c3cbd3; opacity: 1; }
+.hc body.locked .newtake, .hc body.locked .mark, .hc body.locked .star, .hc body.locked [data-act="fill"], .hc body.locked [data-act="clear"], .hc body.locked [data-act="takesheet"] { opacity: .6; }
+body.locked .newtake, body.locked .mark, body.locked .star, body.locked [data-act="fill"], body.locked [data-act="clear"], body.locked [data-act="takesheet"] { opacity: .45; }
+.wrap { max-width: 640px; margin: 0 auto; }
+button { font: inherit; color: inherit; touch-action: manipulation; cursor: pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn { min-height: 48px; padding: 0 16px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: 17px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.danger { border-color: var(--drop); color: var(--drop); }
+.btn.armed { background: var(--drop); color: var(--surface); border-color: var(--drop); }
+.btn.small { min-height: 40px; font-size: 16px; padding: 0 12px; }
+.btn:active { transform: translateY(1px); }
+
+.banner { background: var(--chg-bg); color: var(--ink); border: 1px solid var(--chg); border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 16px; }
+.banner[hidden] { display: none; }
+
+/* sticky take bar */
+.top { position: relative; background: var(--bg); padding: 4px 0 10px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.scenebtn { width: 100%; min-width: 0; min-height: 48px; display: flex; align-items: center; gap: 10px; text-align: left; padding: 0 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+.scenebtn .sn { background: var(--ink); color: var(--bg); font-weight: 700; padding: 2px 8px; border-radius: 3px; letter-spacing: .08em; font-size: 16px; flex: none; }
+.scenebtn .st { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.takebar { min-width: 0; display: flex; gap: 8px; align-items: stretch; }
+.takebar .navb { width: 46px; flex: none; min-height: 60px; font-size: 30px; line-height: 1; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+.takebar .navb[disabled] { opacity: .35; }
+.tk { flex: 1; min-width: 0; min-height: 60px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 4px 12px; display: grid; align-content: center; }
+.tk .lab { font-size: 15px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.tk .lab b { color: var(--ink); }
+.tk .num { font-size: 30px; font-weight: 700; line-height: 1; letter-spacing: .04em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
+.tk .num em { font-style: normal; font-size: 16px; letter-spacing: .08em; margin-left: 8px; padding: 2px 6px; border-radius: 3px; vertical-align: 4px; }
+.tk .num em.circle { background: var(--accent); color: var(--accent-ink); }
+.tk .num em.ng { background: var(--drop); color: var(--surface); }
+.newtake { width: 84px; flex: none; padding: 0 6px; font-size: 18px; line-height: 1.05; }
+
+.sum { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; display: grid; gap: 8px; }
+.meter { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--drop-bg); border: 1px solid var(--drop); }
+.counts .togo { color: var(--drop); }
+.meter i { display: block; height: 100%; }
+.meter .m-ok { background: var(--ok); } .meter .m-chg { background: var(--chg); } .meter .m-drop { background: var(--drop); }
+.counts { font-size: 17px; letter-spacing: .03em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.counts b { color: var(--ink); font-weight: 700; }
+.qa { display: flex; gap: 8px; flex-wrap: wrap; }
+.notice { font-size: 16px; color: var(--muted); margin: 0 0 8px; }
+
+/* line rows */
+.row { display: grid; grid-template-columns: 58px minmax(0, 1fr); background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--line); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+.row.st-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+.row.st-chg { border-left-color: var(--chg); background: var(--chg-bg); }
+.row.st-todo { border-left-color: var(--drop); background: var(--drop-bg); }
+.row.st-drop { border-left-color: var(--drop); background: color-mix(in srgb, var(--drop) 24%, var(--surface)); }
+.row { scroll-margin-top: 170px; }
+.row.dlg { grid-template-columns: 58px minmax(0, 1fr) 54px; }
+.star { border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; min-height: 66px; }
+.star svg { width: 30px; height: 30px; display: block; }
+.star[aria-pressed="true"] { color: var(--accent); }
+.chip.star { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.chip .sm { font-size: 15px; color: var(--accent); }
+.counts .best, .card .cts .best { color: var(--accent); }
+.row.flash { outline: 3px solid var(--accent); }
+.mark { border: 0; background: transparent; min-height: 66px; display: grid; place-items: center; color: var(--muted); }
+.st-ok .mark { color: var(--ok); } .st-chg .mark { color: var(--chg); } .st-drop .mark, .st-todo .mark { color: var(--drop); }
+.mark svg { width: 34px; height: 34px; display: block; }
+.mark .lbl { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; margin-top: -6px; font-weight: 600; }
+.lbody { padding: 9px 12px 9px 4px; text-align: left; border: 0; background: transparent; min-width: 0; }
+.cue { display: block; font-weight: 700; font-size: 16px; letter-spacing: .12em; text-transform: uppercase; }
+.txt { display: block; font-family: var(--script); font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }
+.row.act .txt { color: var(--muted); font-style: italic; }
+.nt { display: block; margin-top: 6px; font-size: 16px; font-weight: 600; letter-spacing: .02em; }
+.nt::before { content: "Note: "; text-transform: uppercase; letter-spacing: .08em; font-size: 14px; color: var(--muted); }
+
+.empty { text-align: center; padding: 40px 12px; color: var(--muted); display: grid; gap: 14px; justify-items: center; }
+.empty h2 { margin: 0; color: var(--ink); font-size: 26px; letter-spacing: .04em; text-transform: uppercase; }
+.empty p { margin: 0; max-width: 32ch; font-size: 18px; }
+
+/* log and script screens */
+.h { font-size: 15px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 4px 0 8px; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--surface); margin-bottom: 10px; }
+.seg button { min-height: 46px; border: 0; background: transparent; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 17px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button.on { background: var(--ink); color: var(--bg); }
+.card { display: block; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
+.card .th { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.card .tn { font-size: 24px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.card .tm { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pill { font-size: 15px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 1px 7px; border-radius: 3px; }
+.pill.circle { background: var(--accent); color: var(--accent-ink); }
+.pill.ng { background: var(--drop); color: var(--surface); }
+.pill.ex { background: var(--raised); color: var(--muted); border: 1px solid var(--line); }
+.card .cts { color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.card .cts b { color: var(--ink); }
+.card .tnote { margin-top: 6px; font-family: var(--script); font-size: 15px; }
+.lrow { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
+.lrow .txt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip { min-height: 38px; min-width: 52px; padding: 0 10px; border-radius: 5px; border: 1px solid var(--line); background: var(--raised); font-weight: 700; font-size: 17px; letter-spacing: .04em; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+.chip.st-ok { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+.chip.st-chg { background: var(--chg-bg); border-color: var(--chg); color: var(--chg); }
+.chip.st-drop { background: var(--drop-bg); border-color: var(--drop); color: var(--drop); }
+.chip.st-none { color: var(--muted); }
+.chip svg { width: 14px; height: 14px; }
+.exports { display: grid; gap: 8px; margin-top: 14px; }
+
+/* bottom tabs */
+.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); display: flex; padding: 0 max(8px, env(safe-area-inset-left, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-right, 0px)); }
+.tabs button { flex: 1; min-height: 64px; border: 0; background: transparent; display: grid; place-items: center; align-content: center; gap: 2px; color: var(--muted); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; font-size: 15px; position: relative; }
+.tabs button svg { width: 26px; height: 26px; }
+.tabs button.on { color: var(--accent); }
+.tabs button.on::before { content: ""; position: absolute; top: 0; left: 22%; right: 22%; height: 4px; background: var(--accent); border-radius: 0 0 3px 3px; }
+
+/* sheets */
+#sheet { position: fixed; inset: 0; z-index: 30; }
+#sheet[hidden] { display: none; }
+.scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, .5); }
+.panel { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 640px; max-height: 90dvh; overflow-y: auto; background: var(--surface); border-radius: 14px 14px 0 0; padding: 10px max(16px, env(safe-area-inset-left, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 12px; }
+.grab { width: 44px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto; }
+.panel h3 { margin: 0; font-size: 24px; letter-spacing: .05em; text-transform: uppercase; }
+.panel label { font-size: 15px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; display: block; margin-bottom: 4px; }
+.panel input[type=text], .panel textarea { width: 100%; font: inherit; font-family: var(--script); font-size: 17px; line-height: 1.4; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+.panel textarea { min-height: 92px; resize: vertical; }
+.ltxt { margin: 0; font-family: var(--script); font-size: 17px; line-height: 1.45; }
+.big3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.big3 button { min-height: 76px; border-radius: 8px; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; align-content: center; gap: 2px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 17px; }
+.big3 button svg { width: 30px; height: 30px; }
+.big3 button[data-set="ok"] { color: var(--ok); } .big3 button[data-set="chg"] { color: var(--chg); } .big3 button[data-set="drop"] { color: var(--drop); }
+.big3 button.on[data-set="ok"] { background: var(--ok-bg); border-color: var(--ok); }
+.big3 button.on[data-set="chg"] { background: var(--chg-bg); border-color: var(--chg); }
+.big3 button.on[data-set="drop"] { background: var(--drop-bg); border-color: var(--drop); }
+.qchips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.qchips button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.qchips button { min-height: 40px; padding: 0 12px; border-radius: 20px; border: 1px solid var(--line); background: var(--raised); font-weight: 600; font-size: 16px; letter-spacing: .03em; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stepper { display: grid; grid-template-columns: 56px 1fr 56px; gap: 8px; align-items: center; }
+.stepper button { min-height: 52px; font-size: 28px; line-height: 1; }
+.stepper output { text-align: center; font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.seg3 { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg3 button { min-height: 48px; border: 0; background: var(--surface); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 17px; }
+.seg3 button + button { border-left: 1px solid var(--line); }
+.seg3 button.on { background: var(--ink); color: var(--bg); }
+.scenelist { display: grid; gap: 8px; }
+.scenelist .card { margin: 0; }
+.imp-info { color: var(--muted); font-size: 17px; margin: 0; }
+#toast { position: fixed; left: 50%; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 22px; font-weight: 600; letter-spacing: .03em; max-width: 90vw; }
+#toast[hidden] { display: none; }
+@media (prefers-reduced-motion: no-preference) { .row { transition: background .12s; } .panel { animation: up .18s ease-out; } @keyframes up { from { transform: translate(-50%, 24px); opacity: .6; } } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="banner" id="banner" hidden></div>
+  <main id="screen"><div class="empty"><p>Loading your script…</p></div></main>
+</div>
+<nav class="tabs" id="tabs" aria-label="Sections"></nav>
+<div id="sheet" hidden></div>
+<input type="file" id="restorefile" accept=".json,application/json" hidden>
+<button type="button" id="ctab" hidden></button><div id="ctlov" hidden></div>
+  <div id="toast" role="status" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function uid(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function clean(s) { return String(s).replace(/\s+/g, ' ').trim(); }
+
+  /* quick note buttons: edit these words to suit the shoot */
+  var LINE_CHIPS = ['Flubbed', 'Ad lib', 'Off mic', 'Great read', 'Noise', 'Pickup needed', 'Overlap', 'Wrong emphasis', 'Early', 'Late'];
+  var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
+
+  /* ---------- per-phone convenience: last scene, last take, filters ---------- */
+  var APP_VER = 22;
+  var HC = true;
+  try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
+  function applyHC() { document.documentElement.classList.toggle('hc', HC); }
+  applyHC();
+  var UIKEY = 'linedscript.ui';
+  var UI = { tab: 'take', sceneId: null, takeId: null, logView: 'takes', dialogueOnly: false };
+  try {
+    var u = JSON.parse(localStorage.getItem(UIKEY) || 'null');
+    if (u) { UI.sceneId = u.sceneId || null; UI.takeId = u.takeId || null; UI.logView = u.logView || 'takes'; UI.dialogueOnly = !!u.dialogueOnly; }
+  } catch (e) {}
+  function saveUI() { try { localStorage.setItem(UIKEY, JSON.stringify({ sceneId: UI.sceneId, takeId: UI.takeId, logView: UI.logView, dialogueOnly: UI.dialogueOnly })); } catch (e) {} }
+
+  /* ---------- data ---------- */
+  var S = { scenes: {}, takes: {}, flags: {}, fps: 25, locked: false };
+  var ready = { scenes: false, takes: false }, mode = 'connecting', db = null, slow = false, slowTimer = null;
+  var dirty = {}, tomb = {}, recent = {}, timers = {}, latest = {}, inflight = {};
+  function mapOf(k) { return k === 'scenes' ? S.scenes : k === 'flags' ? S.flags : S.takes; }
+  /* Projects: every project is kept in its own slot on this device. */
+  var PIDX = 'linedscript.projects';
+  var PROJ = { current: null, list: [] };
+  function PKEY(id) { return 'linedscript.p.' + id; }
+  function normaliseS(d) {
+    d = d || {};
+    return { scenes: d.scenes || {}, takes: d.takes || {}, flags: d.flags || {}, fps: d.fps || 25, locked: !!d.locked, lastBackup: d.lastBackup || '', resumes: d.resumes || [], wraps: d.wraps || [], wrapped: !!d.wrapped, quick: d.quick || [], quickGone: d.quickGone || [], lockedSetups: d.lockedSetups || [] };
+  }
+  function readProject(id) { try { return JSON.parse(localStorage.getItem(PKEY(id)) || 'null'); } catch (e) { return null; } }
+  function saveIndex() { try { localStorage.setItem(PIDX, JSON.stringify(PROJ)); } catch (e) {} }
+  function curProj() { return PROJ.list.filter(function (x) { return x.id === PROJ.current; })[0]; }
+  function persistLocal() {
+    if (!PROJ.current) return;
+    try { localStorage.setItem(PKEY(PROJ.current), JSON.stringify(S)); var c = curProj(); if (c) { c.updated = Date.now(); saveIndex(); } } catch (e) {}
+  }
+  function addProject(name) {
+    var id = uid('p'); PROJ.list.push({ id: id, name: name || 'New project', created: Date.now(), updated: Date.now() }); return id;
+  }
+  function switchProject(id) {
+    persistLocal(); PROJ.current = id; saveIndex(); S = normaliseS(readProject(id));
+    UI.sceneId = null; UI.takeId = null; UI.tab = 'take'; render(); window.scrollTo(0, 0);
+  }
+  function startNewProject(name) {
+    persistLocal(); PROJ.current = addProject(name); saveIndex(); S = normaliseS(null); persistLocal();
+    UI.sceneId = null; UI.takeId = null; UI.tab = 'script'; render(); window.scrollTo(0, 0);
+  }
+  function deleteCurrentProject() {
+    var id = PROJ.current;
+    Object.keys(S.flags).forEach(function (fid) { photoDel(fid); });
+    try { localStorage.removeItem(PKEY(id)); } catch (e) {}
+    PROJ.list = PROJ.list.filter(function (x) { return x.id !== id; });
+    if (!PROJ.list.length) { PROJ.current = addProject('Project 1'); saveIndex(); S = normaliseS(null); persistLocal(); }
+    else { var next = PROJ.list.slice().sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); })[0]; PROJ.current = next.id; saveIndex(); S = normaliseS(readProject(next.id)); }
+    UI.sceneId = null; UI.takeId = null; UI.tab = 'take'; render(); window.scrollTo(0, 0);
+  }
+  function slug(n) { return String(n || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) || 'project'; }
+
+  function save(kind, obj, delay) {
+    var path = kind + '/' + obj.id;
+    mapOf(kind)[obj.id] = obj;
+    if (mode === 'local') { persistLocal(); return; }
+    dirty[path] = true; recent[path] = Date.now(); latest[path] = obj;
+    clearTimeout(timers[path]);
+    timers[path] = setTimeout(function () { flush(path); }, 350 + (delay || 0));
+  }
+  async function flush(path) {
+    if (inflight[path]) return;
+    inflight[path] = true;
+    var d;
+    try {
+      while (latest[path]) {
+        d = latest[path]; delete latest[path];
+        var body = JSON.parse(JSON.stringify(d)); delete body.id;
+        await db.doc(path).set(body);
+      }
+      delete dirty[path];
+    } catch (e) {
+      if (d && !latest[path]) latest[path] = d;
+      toast('Not saved yet. Will retry.');
+      timers[path] = setTimeout(function () { flush(path); }, 5000);
+    } finally { inflight[path] = false; }
+  }
+  function remove(kind, id) {
+    var path = kind + '/' + id;
+    delete mapOf(kind)[id];
+    if (mode === 'local') { persistLocal(); return; }
+    tomb[path] = true; delete latest[path]; delete dirty[path]; clearTimeout(timers[path]);
+    db.doc(path).delete().catch(function () { toast('Delete not saved. Check signal.'); }).then(function () { setTimeout(function () { delete tomb[path]; }, 5000); });
+  }
+  function ingest(kind, snap) {
+    var map = mapOf(kind), seen = {};
+    snap.docs.forEach(function (d) {
+      var path = kind + '/' + d.id; seen[d.id] = 1;
+      if (dirty[path] || tomb[path]) return;
+      var o = JSON.parse(JSON.stringify(d.data() || {})); o.id = d.id; map[d.id] = o;
+    });
+    Object.keys(map).forEach(function (id) {
+      var path = kind + '/' + id;
+      if (!seen[id] && !dirty[path] && !(recent[path] && Date.now() - recent[path] < 5000)) delete map[id];
+    });
+    ready[kind] = true;
+    if (ready.scenes && ready.takes) { slow = false; clearTimeout(slowTimer); }
+    if (!$('#sheet').hidden) return;
+    render();
+  }
+  function goLocal() {
+    mode = 'local';
+    try { var pi = JSON.parse(localStorage.getItem(PIDX) || 'null'); if (pi && Array.isArray(pi.list) && pi.list.length) PROJ = pi; } catch (e) {}
+    if (!PROJ.current || !curProj()) {
+      /* First run of this version: bring across the single project from earlier versions (the old copy is left untouched). */
+      var old = null; try { old = JSON.parse(localStorage.getItem('linedscript.local') || 'null'); } catch (e) {}
+      PROJ = { current: null, list: [] }; PROJ.current = addProject('Project 1');
+      S = normaliseS(old);
+      try { var lb = localStorage.getItem('linedscript.backup'); if (lb && !S.lastBackup) S.lastBackup = lb; } catch (e) {}
+      saveIndex(); persistLocal();
+    } else { S = normaliseS(readProject(PROJ.current)); }
+    ready.scenes = ready.takes = true; render();
+  }
+  function init() {
+    goLocal();
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  }
+
+  /* ---------- script parsing (same rules as Table Read) ---------- */
+  var SLUG = /^(?:(\d+[A-Z]?)\.?\s+)?((?:INT|EXT|INT\.?\/EXT|EXT\.?\/INT|I\/E)[. ].*)$/i;
+  var TRANS = /^(FADE|CUT|DISSOLVE|SMASH CUT|MATCH CUT)\b/;
+  var CUE = /^([A-Z][A-Z0-9 .'’\-]{0,28}?)\s*(\([^)]*\))?$/;
+  var COLON = /^([A-Z][A-Z0-9 .'’\-]{0,28}?)\s*(\([^)]*\))?:\s+(.+)$/;
+  function parseItems(src) {
+    var rows = src.replace(/\r/g, '').split('\n'), out = [], i = 0;
+    while (i < rows.length) {
+      var t = rows[i].trim();
+      if (!t) { i++; continue; }
+      var sm = t.match(SLUG);
+      if (sm) { out.push({ type: 'slug', num: sm[1] || '', text: clean(sm[2]) }); i++; continue; }
+      if (TRANS.test(t) && t === t.toUpperCase()) { i++; continue; }
+      var m = t.match(COLON);
+      if (m && m[1] === m[1].toUpperCase()) { out.push({ type: 'dialogue', who: clean(m[1]), text: clean((m[2] ? m[2] + ' ' : '') + m[3]) }); i++; continue; }
+      var c = t.match(CUE), nx = rows[i + 1] !== undefined ? rows[i + 1].trim() : '';
+      if (c && t === t.toUpperCase() && /[A-Z]/.test(t) && nx) {
+        var j = i + 1, parts = [];
+        while (j < rows.length && rows[j].trim() && !SLUG.test(rows[j].trim())) { parts.push(rows[j].trim()); j++; }
+        out.push({ type: 'dialogue', who: clean(c[1]), text: clean(parts.join(' ')) });
+        i = j; continue;
+      }
+      var block = [];
+      while (i < rows.length && rows[i].trim() && (!block.length || !SLUG.test(rows[i].trim()))) { block.push(rows[i].trim()); i++; }
+      out.push({ type: 'action', who: '', text: clean(block.join(' ')) });
+    }
+    return out;
+  }
+  function parseScript(src) {
+    var items = parseItems(src), scenes = [], cur = null;
+    if (!items.some(function (x) { return x.type === 'slug'; })) { cur = { name: 'Pasted script', number: '', lines: [] }; scenes.push(cur); }
+    items.forEach(function (x) {
+      if (x.type === 'slug') { cur = { name: x.text, number: x.num, lines: [] }; scenes.push(cur); return; }
+      if (!cur) return;
+      cur.lines.push({ id: String(cur.lines.length + 1), type: x.type, who: x.who, text: x.text });
+    });
+    return scenes.filter(function (s) { return s.lines.length; });
+  }
+
+  /* ---------- helpers ---------- */
+  function nextClip(c) {
+    var m = String(c || '').match(/^(.*?)(\d+)(\D*)$/); if (!m) return c || '';
+    var n = String(Number(m[2]) + 1); while (n.length < m[2].length) n = '0' + n; return m[1] + n + m[3];
+  }
+  function titleCase(w) { return w.toLowerCase().replace(/(^|[\s'’-])([a-z])/g, function (x, a, b) { return a + b.toUpperCase(); }); }
+  function quickSeed(scenes, force) {
+    S.quick = S.quick || []; S.quickGone = S.quickGone || [];
+    var have = S.quick.map(function (x) { return x.toLowerCase(); }), gone = force ? [] : S.quickGone.map(function (x) { return x.toLowerCase(); }), seen = {}, added = 0;
+    scenes.forEach(function (sc) { (sc.lines || []).forEach(function (l) {
+      var w = String(l.who || '').replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim(); if (!w || w.length > 30) return;
+      var k = w.toLowerCase(); if (seen[k] || have.indexOf(k) >= 0 || gone.indexOf(k) >= 0) return; seen[k] = 1;
+      S.quick.push(titleCase(w)); added++;
+    }); });
+    if (force) S.quickGone = [];
+    return added;
+  }
+  function sceneList() { return Object.keys(S.scenes).map(function (k) { return S.scenes[k]; }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); }); }
+  function takesOf(sid) {
+    return Object.keys(S.takes).map(function (k) { return S.takes[k]; }).filter(function (t) { return t.sceneId === sid; })
+      .sort(function (a, b) { return String(a.createdAt || '').localeCompare(String(b.createdAt || '')) || (a.take - b.take); });
+  }
+  function curScene() {
+    var list = sceneList(); if (!list.length) return null;
+    var s = S.scenes[UI.sceneId];
+    if (!s) { s = list[0]; UI.sceneId = s.id; UI.takeId = null; }
+    return s;
+  }
+  function curTake() {
+    var sc = curScene(); if (!sc) return null;
+    var t = S.takes[UI.takeId];
+    if (t && t.sceneId === sc.id) return t;
+    var ts = takesOf(sc.id); t = ts.length ? ts[ts.length - 1] : null;
+    UI.takeId = t ? t.id : null; return t;
+  }
+  function vis(sc) { return UI.dialogueOnly ? sc.lines.filter(function (l) { return l.type === 'dialogue'; }) : sc.lines; }
+  function tally(sc, t) {
+    var c = { ok: 0, chg: 0, drop: 0, none: 0 };
+    vis(sc).forEach(function (l) { var m = (t.marks || {})[l.id] || ''; if (m) c[m]++; else if (l.type === 'dialogue') c.none++; });
+    return c;
+  }
+  function fmtTime(iso) { try { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+  function sceneLabel(sc) { return (sc.number ? 'SC ' + sc.number : 'SC'); }
+  function takeName(t) { return 'Setup ' + t.setup + ' · Take ' + t.take + (t.clip ? ' · ' + t.clip : ''); }
+  function cueOf(l) { return l.type === 'dialogue' ? l.who : ''; }
+
+  var ICON = {
+    '': '<svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="13" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>',
+    ok: '<svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="14" fill="currentColor"/><path d="M10 17.5l5 5 9-10.5" fill="none" stroke="var(--surface)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    chg: '<svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="14" fill="currentColor"/><path d="M9 18.5c2.5-5 5-5 8-1.5s5.500 3 8-1.500" fill="none" stroke="var(--surface)" stroke-width="3.2" stroke-linecap="round"/></svg>',
+    drop: '<svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="14" fill="currentColor"/><path d="M11 11l12 12M23 11L11 23" fill="none" stroke="var(--surface)" stroke-width="3.4" stroke-linecap="round"/></svg>'
+  };
+  var WORD = { '': 'Not logged', ok: 'Said', chg: 'Changed', drop: 'Not said' };
+  var NEXT = { '': 'ok', ok: 'chg', chg: 'drop', drop: '' };
+  function mini(st) { return ICON[st].replace('<svg ', '<svg width="14" height="14" '); }
+
+  var toastTimer;
+  function toast(msg) { var t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2400); }
+  var armedBtn = null, armTimer;
+  function arm(btn, label) {
+    if (armedBtn === btn) { clearTimeout(armTimer); armedBtn = null; return true; }
+    if (armedBtn) { armedBtn.classList.remove('armed'); armedBtn.textContent = armedBtn.dataset.was; }
+    btn.dataset.was = btn.textContent; btn.textContent = label || 'Tap again'; btn.classList.add('armed'); armedBtn = btn;
+    clearTimeout(armTimer); armTimer = setTimeout(function () { if (armedBtn === btn) { btn.classList.remove('armed'); btn.textContent = btn.dataset.was; armedBtn = null; } }, 3000);
+    return false;
+  }
+
+  /* ---------- screens ---------- */
+  var TABS = [
+    { id: 'take', label: 'Take', svg: '<svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M3 9h20v13H3zM3 9l3-5h5l-3 5M12 9l3-5h5l-3 5"/></svg>' },
+    { id: 'log', label: 'Log', svg: '<svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h18M4 13h18M4 20h11"/></svg>' },
+    { id: 'script', label: 'Script', svg: '<svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M6 3h10l5 5v15H6zM16 3v5h5M10 13h7M10 17h7"/></svg>' }
+  ];
+  function paintTabs() {
+    $('#tabs').innerHTML = TABS.map(function (t) {
+      return '<button type="button" data-act="tab" data-tab="' + t.id + '" class="' + (UI.tab === t.id ? 'on' : '') + '"' + (UI.tab === t.id ? ' aria-current="page"' : '') + '>' + t.svg + '<span>' + t.label + '</span></button>';
+    }).join('');
+  }
+  function paintBanner() {
+    var b = $('#banner'), msg = '';
+    if (slow) msg = 'Can’t reach your saved data yet. What you log is kept and will save when signal returns.';
+    if (S.locked) { b.hidden = false; b.innerHTML = '<div class="lockbar"><span><b>Locked</b> · read only</span><button type="button" class="btn small" data-act="unlock">Unlock</button></div>'; return; }
+    var ct = curTake();
+    if (ct && UI.tab === 'take' && isLockedTake(ct)) { b.hidden = false; b.innerHTML = '<div class="lockbar"><span><b>Setup ' + esc(ct.setup) + ' locked</b> · read only</span><button type="button" class="btn small" data-act="locksetup" data-k="' + esc(lockKey(ct)) + '">Unlock</button></div>'; return; }
+    if (S.wrapped) { var lw = (S.wraps || [])[(S.wraps || []).length - 1]; b.hidden = false; b.innerHTML = '<div class="lockbar"><span><b>Wrapped</b>' + (lw ? ' · ' + (lw.kind === 'end' ? 'end of day' : 'break') + ' ' + hm(lw.at) : '') + '</span><button type="button" class="btn small" data-act="resume">Resume</button></div>'; return; }
+    var un = untypedCount();
+    if (un) { b.hidden = false; b.innerHTML = '<div class="lockbar"><span><b>Timecode</b> · ' + un + ' flag' + (un === 1 ? '' : 's') + ' still need' + (un === 1 ? 's' : '') + ' typing</span><button type="button" class="btn small" data-act="flags">Type</button></div>'; return; }
+    b.hidden = !msg; b.textContent = msg;
+  }
+  function untypedCount() { return flagList().filter(function (f) { return !tcValid(f.tc); }).length; }
+  function warnUntyped() { var n = untypedCount(); if (n) setTimeout(function () { toast(n + ' flag' + (n === 1 ? ' has' : 's have') + ' no timecode yet, so some takes may have none.'); }, 1800); }
+
+  function sceneButton(sc) {
+    return '<button type="button" class="scenebtn" data-act="scenes"><span class="sn">' + esc(sceneLabel(sc)) + '</span><span class="st">' + esc(sc.name) + '</span>' +
+      '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button>';
+  }
+  function emptyScript() {
+    return '<div class="empty"><h2>No script yet</h2><p>Paste your script or load a PDF. Each scene becomes a page you can log takes against.</p>' +
+      '<button type="button" class="btn primary" data-act="import">Load your script</button><button type="button" class="btn" data-act="restore">Restore from a file</button><p class="notice" style="margin-top:14px">Lined Script <b>Ver ' + APP_VER + '</b></p></div>';
+  }
+
+  function starSvg(on) {
+    return '<svg viewBox="0 0 34 34" aria-hidden="true"><path d="M17 4l3.9 8.3 9.1 1.1-6.7 6.2 1.8 9L17 24l-8.1 4.6 1.8-9L4 13.4l9.1-1.1z" fill="' + (on ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg>';
+  }
+  function starBtn(l, t) {
+    var on = !!(t.stars || {})[l.id];
+    return '<button type="button" class="star" data-act="star" aria-pressed="' + on + '" aria-label="Best delivery of line ' + esc(l.id) + '">' + starSvg(on) + '</button>';
+  }
+  function nStars(t) { return Object.keys(t.stars || {}).length; }
+  function toggleStar(t, id) {
+    t.stars = t.stars || {};
+    if (t.stars[id]) delete t.stars[id];
+    else { t.stars[id] = true; var m = (t.marks || {})[id] || ''; if (!m || m === 'drop') { t.marks = t.marks || {}; t.marks[id] = 'ok'; } }
+    save('takes', t);
+  }
+  function rowHtml(l, t) {
+    var st = (t.marks || {})[l.id] || '', note = (t.notes || {})[l.id] || '';
+    return '<div class="row ' + (l.type === 'dialogue' ? 'dlg' : 'act') + ' st-' + (st || (l.type === 'dialogue' ? 'todo' : 'none')) + '" data-id="' + esc(l.id) + '">' +
+      '<button type="button" class="mark" data-act="cycle" aria-label="Line ' + esc(l.id) + ': ' + (st ? WORD[st] : (l.type === 'dialogue' ? 'still to say' : 'not logged')) + '. Tap to change.">' + ICON[st] + '</button>' +
+      '<button type="button" class="lbody" data-act="open" aria-label="Open line ' + esc(l.id) + ' for notes">' +
+      (l.type === 'dialogue' ? '<span class="cue">' + esc(l.who) + '</span>' : '') +
+      '<span class="txt">' + esc(l.text) + '</span>' + (note ? '<span class="nt">' + esc(note) + '</span>' : '') + '</button>' + (l.type === 'dialogue' ? starBtn(l, t) : '') + '</div>';
+  }
+  function sumHtml(sc, t) {
+    var c = tally(sc, t), n = c.ok + c.chg + c.drop + c.none || 1;
+    var stars = vis(sc).filter(function (l) { return (t.stars || {})[l.id]; }).length;
+    var pct = function (x) { return (x / n * 100).toFixed(1) + '%'; };
+    return '<div class="meter" aria-hidden="true"><i class="m-ok" style="width:' + pct(c.ok) + '"></i><i class="m-chg" style="width:' + pct(c.chg) + '"></i><i class="m-drop" style="width:' + pct(c.drop) + '"></i></div>' +
+      '<div class="counts"><b>' + c.ok + '</b> said · <b>' + c.chg + '</b> changed · <b>' + c.drop + '</b> not said · <b class="togo">' + c.none + '</b> to go' + (stars ? ' · <b class="best">★ ' + stars + '</b> best' : '') + '</div>' +
+      '<div class="qa"><button type="button" class="btn small" data-act="fill">Rest as said</button>' +
+      '<button type="button" class="btn small" data-act="clear">Clear take</button>' +
+      '<button type="button" class="btn small" data-act="filter">' + (UI.dialogueOnly ? 'Show action' : 'Dialogue only') + '</button></div>';
+  }
+  function takeScreen() {
+    var sc = curScene(); if (!sc) return emptyScript();
+    var t = curTake(), ts = takesOf(sc.id), ix = t ? ts.indexOf(t) : -1;
+    var head = '<div class="top">' + sceneButton(sc) + '<div class="takebar">' +
+      '<button type="button" class="navb" data-act="prevtake" aria-label="Previous take"' + (ix > 0 ? '' : ' disabled') + '>‹</button>' +
+      (t ? '<button type="button" class="tk" data-act="takesheet"><span class="lab">Setup <b>' + esc(t.setup) + '</b>' + (t.shot || t.rig || t.clip || t.desc || t.kname ? [''].concat([t.shot, t.rig].filter(Boolean).map(esc), (t.desc ? [esc(t.desc)] : []).concat(t.result === 'circle' && t.kname ? ['Keeper: <b>' + esc(t.kname) + '</b>'] : []).concat(t.clip ? ['Clip <b>' + esc(t.clip) + '</b>'] : [])).join(' · ') : ' · + details') + '</span><span class="num">Take ' + esc(t.take) +
+        (t.result === 'circle' ? '<em class="circle">Keeper</em>' : t.result === 'ng' ? '<em class="ng">NG</em>' : t.result === 'misfire' ? '<em class="ng">Misfire</em>' : '') + '</span></button>'
+        : '<div class="tk"><span class="lab">No takes yet</span><span class="num">Ready</span></div>') +
+      '<button type="button" class="navb" data-act="nexttake" aria-label="Next take"' + (ix >= 0 && ix < ts.length - 1 ? '' : ' disabled') + '>›</button>' +
+      '</div><div class="setrow"><button type="button" class="btn primary" data-act="newsetup">New setup</button><button type="button" class="btn" data-act="newtake">New take</button></div>' + (t ? '<div class="setrow2"><button type="button" class="btn" data-act="misfire">Misfire · next take</button><button type="button" class="btn keeper' + (t.result === 'circle' ? ' on' : '') + '" data-act="keeper">' + (t.result === 'circle' ? 'Keeper ✓' : 'Keeper') + '</button></div>' : '') + '</div>';
+    var ex = sc.example ? '<p class="notice">Example scene. Load your own script on the Script tab, then delete this one.</p>' : '';
+    if (!t) return head + ex + '<div class="empty"><h2>Scene ' + esc(sc.number || '') + '</h2><p>Press New take when the camera rolls, then tap each line as it is said.</p></div>';
+    return head + ex + '<div class="sum" id="sum">' + sumHtml(sc, t) + '</div><div id="lines">' + vis(sc).map(function (l) { return rowHtml(l, t); }).join('') + '</div>';
+  }
+
+  function logScreen() {
+    var sc = curScene(); if (!sc) return emptyScript();
+    var ts = takesOf(sc.id);
+    var head = flagsBlock() + '<div class="top">' + sceneButton(sc) + '</div><div class="seg" role="tablist"><button type="button" data-act="logview" data-v="takes" class="' + (UI.logView === 'takes' ? 'on' : '') + '">By take</button>' +
+      '<button type="button" data-act="logview" data-v="lines" class="' + (UI.logView === 'lines' ? 'on' : '') + '">By line</button></div>';
+    var body = '', tcs = takeTcs();
+    if (!ts.length) body = '<div class="empty"><h2>No takes logged</h2><p>Takes you log on the Take tab appear here.</p></div>';
+    else if (UI.logView === 'takes') {
+      var order = [], info = {};
+      ts.forEach(function (t) { var i = info[t.setup] || (info[t.setup] = { n: 0, k: 0, d: '', kn: [] }); if (t.result === 'circle' && t.kname && i.kn.indexOf(t.kname) < 0) i.kn.push(t.kname); if (!order.length || order.indexOf(t.setup) < 0) order.push(t.setup); i.n++; if (t.result === 'circle') i.k++; if (t.desc) i.d = t.desc; });
+      var strip = '<div class="setsum">' + order.map(function (k) { var i = info[k]; var lk = sc.id + '|' + k, isL = (S.lockedSetups || []).indexOf(lk) >= 0; return '<div class="ss"><span><b>Setup ' + esc(k) + '</b>' + (i.d ? ' · ' + esc(i.d) : '') + ' · ' + i.n + ' take' + (i.n === 1 ? '' : 's') + ' · ' + (i.k ? '<b>' + i.k + ' keeper' + (i.k === 1 ? '' : 's') + '</b>' + (i.kn.length ? ' (' + esc(i.kn.join(', ')) + ')' : '') : '<b class="nok">no keeper yet</b>') + '</span><button type="button" class="btn small lockb' + (isL ? ' on' : '') + '" data-act="locksetup" data-k="' + esc(lk) + '">' + (isL ? 'Locked · Unlock' : 'Lock') + '</button></div>'; }).join('') + '</div>';
+      body = strip + ts.slice().reverse().map(function (t) {
+        var c = tally(sc, t);
+        return '<button type="button" class="card" data-act="gotake" data-id="' + esc(t.id) + '"><div class="th"><span class="tn">' + esc(takeName(t)) + '</span>' +
+          (t.result === 'circle' ? '<span class="pill circle">Keeper</span>' : t.result === 'ng' ? '<span class="pill ng">NG</span>' : t.result === 'misfire' ? '<span class="pill ng">Misfire</span>' : '') +
+          (t.example ? '<span class="pill ex">Example</span>' : '') + '<span class="tm">' + esc(fmtTime(t.createdAt)) + '</span></div>' +
+          '<div class="cts"><b>' + c.ok + '</b> said · <b>' + c.chg + '</b> changed · <b>' + c.drop + '</b> not said · <b>' + c.none + '</b> not logged' + (nStars(t) ? ' · <b class="best">★ ' + nStars(t) + '</b> best' : '') + '</div>' +
+          (t.result === 'circle' && t.kname ? '<div class="cts">Keeper: <b>' + esc(t.kname) + '</b></div>' : '') +
+          (shotRig(t) ? '<div class="cts"><b>' + esc(shotRig(t)) + '</b></div>' : '') +
+          (tcs[t.id] && tcs[t.id].start ? '<div class="cts">Start TC <b>' + esc(tcs[t.id].start) + '</b></div>' : '') +
+          (t.note ? '<div class="tnote">' + esc(t.note) + '</div>' : '') + '</button>';
+      }).join('');
+    } else {
+      var setups = {}; ts.forEach(function (t) { setups[t.setup] = 1; });
+      var multi = Object.keys(setups).length > 1;
+      body = vis(sc).map(function (l) {
+        return '<div class="lrow">' + (l.type === 'dialogue' ? '<span class="cue">' + esc(l.who) + '</span>' : '') + '<span class="txt">' + esc(l.text) + '</span><div class="chips">' +
+          ts.map(function (t) {
+            var st = (t.marks || {})[l.id] || '';
+            return '<button type="button" class="chip st-' + (st || 'none') + ((t.stars || {})[l.id] ? ' star' : '') + '" data-act="gotake" data-id="' + esc(t.id) + '" data-line="' + esc(l.id) + '" aria-label="' + esc(takeName(t)) + ': ' + WORD[st] + '">' +
+              mini(st) + (multi ? esc(t.setup) + '/' : '') + esc(t.take) + ((t.stars || {})[l.id] ? '<span class="sm">★</span>' : '') + '</button>';
+          }).join('') + '</div></div>';
+      }).join('');
+    }
+    var ex = '<div class="exports"><div class="h">Export</div><button type="button" class="btn primary" data-act="resolvecsv">Export to Resolve</button><button type="button" class="btn" data-act="resolvemarkers">Export markers for Resolve</button></div>';
+    return head + body + ex;
+  }
+
+  function backupHtml() {
+    var last = S.lastBackup || '';
+    var lastTxt = last ? new Date(last).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'never';
+    var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+    return '<div class="exports"><div class="h">Save and open</div><p class="notice">Your takes are stored on this phone only. Last backup: <b>' + esc(lastTxt) + '</b>.</p>' +
+      '<button type="button" class="btn" data-act="backup">Save project to a file</button>' +
+      '<button type="button" class="btn" data-act="sharescript">Send the script only</button>' +
+      '<button type="button" class="btn" data-act="restore">Open from a file</button>' +
+      '<button type="button" class="btn" data-act="contrast">High contrast: ' + (HC ? 'On' : 'Off') + '</button>' +
+      '<button type="button" class="btn" data-act="update">Check for updates</button>' +
+      (standalone ? '' : '<p class="notice">To use with no signal, add this page to your home screen from your browser menu.</p>') + '<p class="notice" style="margin-top:14px">Lined Script <b>Ver ' + APP_VER + '</b></p></div>';
+  }
+  function scriptScreen() {
+    var list = sceneList();
+    var head = S.locked ? '' : '<div class="top"><div class="two"><button type="button" class="btn primary" data-act="import">Load script</button><button type="button" class="btn" data-act="addscene">Add scenes</button></div><button type="button" class="btn" data-act="quick" style="margin-top:8px;width:100%">Quick buttons</button></div>';
+    if (!list.length) return emptyScript();
+    return head + '<div class="h">' + list.length + ' scene' + (list.length === 1 ? '' : 's') + '</div><div class="scenelist">' + list.map(function (s) {
+      var nt = takesOf(s.id).length;
+      return '<div class="card"><div class="th"><span class="tn">' + esc(sceneLabel(s)) + '</span>' + (s.example ? '<span class="pill ex">Example</span>' : '') + '</div>' +
+        '<div class="txt" style="font-family:var(--ui);font-weight:600;text-transform:uppercase;letter-spacing:.04em">' + esc(s.name) + '</div>' +
+        '<div class="cts"><b>' + s.lines.length + '</b> lines · <b>' + nt + '</b> take' + (nt === 1 ? '' : 's') + '</div>' +
+        '<div class="two" style="margin-top:10px"><button type="button" class="btn small" data-act="openscene" data-id="' + esc(s.id) + '">Log takes</button>' +
+        (S.locked ? '' : '<button type="button" class="btn small" data-act="editscene" data-id="' + esc(s.id) + '">Edit scene</button>') + '</div></div>';
+    }).join('') + '</div>' + (S.locked ? '<div class="exports"><div class="h">Locked</div><p class="notice">This script is read only so nothing can be changed or erased by accident.</p><button type="button" class="btn" data-act="unlock">Unlock</button></div>' : '<div class="exports"><div class="h">Start again</div><button type="button" class="btn danger" data-act="clearall">Clear script and all takes</button></div>') + backupHtml();
+  }
+
+  /* Controls tab: the top panel scrolls away; a small tab brings it back as a drop-down. */
+  function ctlPanelEnd() { var el = document.getElementById('sum') || $('#screen .top'); return el ? el.getBoundingClientRect().bottom : 1; }
+  function closeCtl() { var o = $('#ctlov'); if (o) { o.hidden = true; o.innerHTML = ''; } }
+  function updateTab() {
+    var tb = $('#ctab'); if (!tb) return;
+    var show = UI.tab === 'take' && !!curScene() && ctlPanelEnd() < 8 && ($('#sheet') || {}).hidden !== false;
+    if (!show) { tb.hidden = true; if (UI.tab !== 'take') closeCtl(); return; }
+    var t = curTake();
+    tb.textContent = (t ? 'Setup ' + t.setup + ' · Take ' + t.take + (t.result === 'circle' ? ' ✓' : '') : 'Controls') + ' ▾'; tb.hidden = false;
+  }
+  function openCtl() {
+    var o = $('#ctlov'); if (!o) return;
+    if (!o.hidden) { closeCtl(); return; }
+    var parts = ['.projbar', '.top', '.sum'].map(function (q) { var e = $('#screen ' + q); return e ? e.outerHTML.replace(/ id="sum"/, '') : ''; }).join('');
+    o.innerHTML = '<div class="scrim2"></div><div class="ovp">' + parts + '</div>'; o.hidden = false;
+    $('.scrim2', o).addEventListener('click', closeCtl);
+    $('.ovp', o).addEventListener('click', function (e) { if (e.target.closest('[data-act]')) setTimeout(closeCtl, 0); });
+  }
+  function render() {
+    closeCtl();
+    document.body.classList.toggle('locked', !!S.locked); applyHC();
+    paintBanner(); paintTabs();
+    var el = $('#screen');
+    if (!ready.scenes || !ready.takes) { el.innerHTML = '<div class="empty"><p>Loading your script…</p></div>'; return; }
+    var cp = curProj();
+    el.innerHTML = (cp ? '<div class="projbar"><button type="button" data-act="projects"><span>Project</span><b>' + esc(cp.name) + '</b><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button></div>' : '') +
+      (UI.tab === 'take' ? takeScreen() : UI.tab === 'log' ? logScreen() : scriptScreen());
+    saveUI(); updateTab();
+  }
+  var tabRaf = 0; window.addEventListener('scroll', function () { if (!tabRaf) tabRaf = requestAnimationFrame(function () { tabRaf = 0; updateTab(); }); }, { passive: true });
+  document.addEventListener('click', function (e) { if (e.target.closest('#ctab')) openCtl(); });
+  function repaintRow(id) {
+    var sc = curScene(), t = curTake(); if (!sc || !t) return;
+    var l = sc.lines.filter(function (x) { return x.id === id; })[0];
+    var old = document.querySelector('.row[data-id="' + id + '"]');
+    if (l && old) old.outerHTML = rowHtml(l, t);
+    var s = $('#sum'); if (s) s.innerHTML = sumHtml(sc, t);
+  }
+
+  /* ---------- changing marks ---------- */
+  function setMark(t, id, st) { t.marks = t.marks || {}; if (st) t.marks[id] = st; else delete t.marks[id]; save('takes', t); }
+  var SHOTS = ['CU', 'MID', 'LONG', 'WIDE', 'ESTABLISHING'], RIGS = ['TRIPOD', 'BAG', 'HAND HELD', 'DRONE'];
+  function shotRig(t) { return [t.shot, t.rig].filter(Boolean).join(' · '); }
+  function lockKey(t) { return t.sceneId + '|' + t.setup; }
+  function isLockedTake(t) { return !!t && (S.lockedSetups || []).indexOf(lockKey(t)) >= 0; }
+  function wrapGuard() { if (S.wrapped) { toast('Wrapped. Tap Resume first.'); return true; } return false; }
+  function keeperSheet() {
+    var t = curTake(); if (!t) return; var isK = t.result === 'circle';
+    openSheet('<h3>' + (isK ? 'Keeper' : 'New keeper') + '</h3><div><label for="kname">What is it a keeper for?</label><input type="text" id="kname" autocomplete="off" maxlength="80" placeholder="e.g. Wetnail with wine"><div class="qchips" id="kq"></div></div>' +
+      '<button type="button" class="btn primary" id="ksave">' + (isK ? 'Save' : 'Save keeper') + '</button>' + (isK ? '<button type="button" class="btn danger" id="krem">Remove keeper</button>' : '<button type="button" class="btn" id="kskip">Skip, no name</button>') + '<button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      function (p) {
+        var kn = $('#kname', p), kq = $('#kq', p); kn.value = isK ? (t.kname || '') : (t.desc || '');
+        function paint() {
+          kq.innerHTML = (S.quick || []).map(function (x) { return '<button type="button" data-q="' + esc(x) + '"' + ((' ' + kn.value.toLowerCase() + ' ').indexOf(' ' + x.toLowerCase() + ' ') >= 0 ? ' class="on"' : '') + '>' + esc(x) + '</button>'; }).join('');
+          kq.querySelectorAll('[data-q]').forEach(function (b) { b.addEventListener('click', function () {
+            var v = b.getAttribute('data-q'), cur = kn.value.trim(), re = new RegExp('(^|\\s)' + v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=\\s|$)', 'i');
+            kn.value = re.test(cur) ? cur.replace(re, ' ').replace(/\s+/g, ' ').trim() : (cur ? cur + ' ' : '') + v; paint();
+          }); });
+        }
+        paint(); kn.addEventListener('input', paint);
+        function done(name) { t.result = 'circle'; t.kname = name; save('takes', t); closeSheet(); toast('Keeper' + (name ? ': ' + name : '')); }
+        $('#ksave', p).addEventListener('click', function () { done(kn.value.trim()); });
+        kn.addEventListener('keydown', function (e) { if (e.key === 'Enter') done(kn.value.trim()); });
+        if (isK) $('#krem', p).addEventListener('click', function () { t.result = ''; t.kname = ''; save('takes', t); closeSheet(); toast('Keeper removed'); });
+        else $('#kskip', p).addEventListener('click', function () { done(''); });
+        setTimeout(function () { try { kn.focus(); } catch (e) {} }, 100);
+      });
+  }
+  function newSetup(name) {
+    var sc = curScene(); if (!sc) return;
+    if (wrapGuard()) return;
+    var ts = takesOf(sc.id), mx = Math.max.apply(null, [0].concat(ts.map(function (x) { return parseInt(x.setup, 10) || 0; }))), setup = String(mx + 1);
+    var lastAll = allTakesSorted().pop();
+    var t = { id: uid('t'), sceneId: sc.id, setup: setup, take: 1, clip: lastAll ? nextClip(lastAll.clip) : '', desc: name || '', shot: '', rig: '', result: '', note: '', marks: {}, notes: {}, createdAt: new Date().toISOString() };
+    save('takes', t); UI.takeId = t.id; render(); window.scrollTo(0, 0); toast('Setup ' + setup + ' · take 1');
+  }
+  function setupSheet() {
+    if (!curScene() || wrapGuard()) return;
+    openSheet('<h3>New setup</h3><div><label for="sname">What is the setup?</label><input type="text" id="sname" autocomplete="off" maxlength="80" placeholder="e.g. Marlene walks"><div class="qchips" id="sq"></div></div>' +
+      '<button type="button" class="btn primary" id="sgo">Start setup</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      function (p) {
+        var sn = $('#sname', p), sq = $('#sq', p);
+        function paint() {
+          sq.innerHTML = (S.quick || []).map(function (x) { return '<button type="button" data-q="' + esc(x) + '"' + ((' ' + sn.value.toLowerCase() + ' ').indexOf(' ' + x.toLowerCase() + ' ') >= 0 ? ' class="on"' : '') + '>' + esc(x) + '</button>'; }).join('');
+          sq.querySelectorAll('[data-q]').forEach(function (b) { b.addEventListener('click', function () {
+            var v = b.getAttribute('data-q'), cur = sn.value.trim(), re = new RegExp('(^|\\s)' + v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=\\s|$)', 'i');
+            sn.value = re.test(cur) ? cur.replace(re, ' ').replace(/\s+/g, ' ').trim() : (cur ? cur + ' ' : '') + v; paint();
+          }); });
+        }
+        paint(); sn.addEventListener('input', paint);
+        $('#sgo', p).addEventListener('click', function () { var v = sn.value.trim(); closeSheet(); newSetup(v); });
+        sn.addEventListener('keydown', function (e) { if (e.key === 'Enter') { var v = sn.value.trim(); closeSheet(); newSetup(v); } });
+        setTimeout(function () { try { sn.focus(); } catch (e) {} }, 100);
+      });
+  }
+  function newTake() {
+    var sc = curScene(); if (!sc) return;
+    /* A new take always continues the setup being shot (the latest take in this scene), never the one you are reviewing. */
+    if (wrapGuard()) return;
+    var ts = takesOf(sc.id), prev = allTakesSorted().pop();
+    if (!prev) { toast('Start with New setup.'); return; }
+    if (prev.sceneId !== sc.id) { var ps = S.scenes[prev.sceneId]; toast('The last take was in ' + (ps ? sceneLabel(ps) : 'another scene') + '. Use New setup to start here.'); return; }
+    if (new Date(prev.createdAt).toDateString() !== new Date().toDateString()) { toast('The last take was on another day. Use New setup.'); return; }
+    if (isLockedTake(prev)) { toast('Setup ' + prev.setup + ' is locked. Use New setup.'); return; }
+    var setup = prev.setup;
+    var n = 1 + Math.max.apply(null, [0].concat(ts.filter(function (t) { return t.setup === setup; }).map(function (t) { return Number(t.take) || 0; })));
+    var lastAll = allTakesSorted().pop();
+    var t = { id: uid('t'), sceneId: sc.id, setup: setup, take: n, clip: lastAll ? nextClip(lastAll.clip) : '', desc: prev ? prev.desc || '' : '', shot: prev ? prev.shot || '' : '', rig: prev ? prev.rig || '' : '', result: '', note: '', marks: {}, notes: {}, createdAt: new Date().toISOString() };
+    save('takes', t); UI.takeId = t.id; render(); window.scrollTo(0, 0); toast('Setup ' + setup + ' · take ' + n + ' started');
+  }
+
+  /* ---------- sync flags, photos and timecode ---------- */
+  var FPS_LIST = [23.976, 24, 25, 29.97, 30];
+  function nomFps() { return Math.round(S.fps || 25); }
+  function idb() {
+    return new Promise(function (res, rej) {
+      var r = indexedDB.open('linedscript-photos', 1);
+      r.onupgradeneeded = function () { r.result.createObjectStore('p'); };
+      r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); };
+    });
+  }
+  async function idbDo(mode, fn) {
+    var d = await idb();
+    return new Promise(function (res, rej) {
+      var tx = d.transaction('p', mode), st = tx.objectStore('p'), rq = fn(st);
+      tx.oncomplete = function () { res(rq ? rq.result : null); }; tx.onerror = function () { rej(tx.error); };
+    });
+  }
+  function photoPut(id, data) { return idbDo('readwrite', function (st) { return st.put(data, id); }); }
+  function photoGet(id) { return idbDo('readonly', function (st) { return st.get(id); }).catch(function () { return null; }); }
+  function photoDel(id) { return idbDo('readwrite', function (st) { return st.delete(id); }).catch(function () {}); }
+  function photoClear() { return idbDo('readwrite', function (st) { return st.clear(); }).catch(function () {}); }
+
+  function tcDigits(str) { return String(str || '').replace(/\D/g, '').slice(0, 8); }
+  function tcFmt(d) { d = tcDigits(d); return [d.slice(0, 2), d.slice(2, 4), d.slice(4, 6), d.slice(6, 8)].filter(function (x) { return x; }).join(':'); }
+  function tcValid(str) {
+    var d = tcDigits(str); if (d.length !== 8) return false;
+    return +d.slice(0, 2) < 24 && +d.slice(2, 4) < 60 && +d.slice(4, 6) < 60 && +d.slice(6, 8) < nomFps();
+  }
+  function tcToSec(str) { var d = tcDigits(str); return +d.slice(0, 2) * 3600 + +d.slice(2, 4) * 60 + +d.slice(4, 6) + +d.slice(6, 8) / nomFps(); }
+  function secToTc(sec) {
+    var n = nomFps(), fr = Math.round(sec * n), day = 86400 * n;
+    fr = ((fr % day) + day) % day;
+    var f = fr % n, t = Math.floor(fr / n), p = function (x) { return (x < 10 ? '0' : '') + x; };
+    return p(Math.floor(t / 3600)) + ':' + p(Math.floor(t / 60) % 60) + ':' + p(t % 60) + ':' + p(f);
+  }
+  function flagList() { return Object.keys(S.flags).map(function (k) { return S.flags[k]; }).sort(function (a, b) { return a.at - b.at; }); }
+  function flagLabel(f) {
+    if (f.kind === 'start') return 'Start flag';
+    if (f.kind === 'stop') return 'Stop flag';
+    var n = flagList().filter(function (x) { return x.kind === 'sync'; }).indexOf(f) + 1;
+    return 'Sync point ' + n;
+  }
+  /* Sessions: Wrap ends one, Resume starts the next. Each session has its own timecode run. */
+  function sessAt(ms) { return 1 + (S.resumes || []).filter(function (r) { return r <= ms; }).length; }
+  function anchors(sess) {
+    /* Timecode only shows 24 hours, so each flag is placed on the day the clock says it should be:
+       the timecode value that best fits the time since the previous flag. */
+    var out = [];
+    flagList().forEach(function (f) {
+      if (!tcValid(f.tc)) return;
+      if (sess && sessAt(f.at) !== sess) return;
+      var t = f.at / 1000, c = tcToSec(f.tc), last = out[out.length - 1];
+      if (last) { var predicted = last.c + (t - last.t); c += Math.round((predicted - c) / 86400) * 86400; }
+      out.push({ t: t, c: c });
+    });
+    return out;
+  }
+  function tcAt(ms, an) {
+    an = an || anchors(); if (!an.length || !isFinite(ms)) return null;
+    var t = ms / 1000;
+    if (t <= an[0].t) return an[0].c + (t - an[0].t);
+    for (var i = 1; i < an.length; i++) {
+      if (t <= an[i].t) {
+        var a = an[i - 1], b = an[i];
+        /* Flags far apart (over six hours, such as a new shoot day) are not blended: use whichever flag is nearer. */
+        if (b.t - a.t > 21600) return (t - a.t <= b.t - t) ? a.c + (t - a.t) : b.c + (t - b.t);
+        var k = b.t === a.t ? 0 : (t - a.t) / (b.t - a.t); return a.c + k * (b.c - a.c);
+      }
+    }
+    var l = an[an.length - 1]; return l.c + (t - l.t);
+  }
+  function allTakesSorted() {
+    return Object.keys(S.takes).map(function (k) { return S.takes[k]; }).sort(function (a, b) { return String(a.createdAt || '').localeCompare(String(b.createdAt || '')); });
+  }
+  function takeTcs() {
+    var by = {}, all = allTakesSorted(), out = {};
+    function anFor(ms) { var k = sessAt(ms); return by[k] || (by[k] = anchors(k)); }
+    all.forEach(function (t, i) {
+      var ms = Date.parse(t.createdAt), nms = all[i + 1] ? Date.parse(all[i + 1].createdAt) : NaN;
+      var st = tcAt(ms, anFor(ms)), nx = (all[i + 1] && sessAt(nms) === sessAt(ms)) ? tcAt(nms, anFor(nms)) : null;
+      out[t.id] = { start: st === null ? '' : secToTc(st), next: nx === null ? '' : secToTc(nx) };
+    });
+    return out;
+  }
+  function flagWhen(f) {
+    var d = new Date(f.at);
+    return d.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  var camStream = null;
+  function stopCam() { try { if (camStream) camStream.getTracks().forEach(function (tr) { tr.stop(); }); } catch (e) {} camStream = null; var c = $('#cam'); if (c) c.remove(); }
+  async function openCamera(kind) {
+    stopCam();
+    var title = kind === 'start' ? 'Start flag' : kind === 'stop' ? 'Stop flag' : 'Sync point';
+    var c = document.createElement('div'); c.id = 'cam';
+    c.innerHTML = '<div class="ctitle">' + title + ' · aim at the timecode</div><video id="camv" playsinline muted autoplay></video>' +
+      '<div class="cbar"><button type="button" class="btn" id="camx">Cancel</button><button type="button" class="shutter" id="cams" aria-label="Take photo"></button><button type="button" class="btn" id="camt">Time only</button></div>';
+    document.body.appendChild(c);
+    var v = $('#camv', c);
+    $('#camx', c).addEventListener('click', stopCam);
+    $('#camt', c).addEventListener('click', function () { var at = Date.now(); stopCam(); makeFlag(kind, at, null); });
+    $('#cams', c).addEventListener('click', function () {
+      var at = Date.now(), data = null;
+      try {
+        var w = v.videoWidth, h = v.videoHeight;
+        if (w && h) { var k = Math.min(1, 1400 / Math.max(w, h)), cv = document.createElement('canvas'); cv.width = Math.round(w * k); cv.height = Math.round(h * k); cv.getContext('2d').drawImage(v, 0, 0, cv.width, cv.height); data = cv.toDataURL('image/jpeg', 0.8); }
+      } catch (e) {}
+      stopCam(); makeFlag(kind, at, data);
+    });
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+      v.srcObject = camStream;
+    } catch (e) {
+      var m = document.createElement('div'); m.className = 'cmsg';
+      m.innerHTML = '<p>The camera could not start. Allow camera access for this app, or tap <b>Time only</b> to log the flag without a photo.</p>';
+      c.appendChild(m);
+    }
+  }
+  async function makeFlag(kind, at, data) {
+    var f = { id: 'f' + at.toString(36) + Math.random().toString(36).slice(2, 5), kind: kind, at: at, tc: '', hasPhoto: !!data };
+    if (data) { try { await photoPut(f.id, data); } catch (e) { f.hasPhoto = false; toast('Photo could not be saved. The time was kept.'); } }
+    save('flags', f); render(); flagSheet(f.id);
+  }
+  async function flagSheet(id) {
+    var f = S.flags[id]; if (!f) return;
+    var photo = f.hasPhoto ? await photoGet(id) : null, ro = !!S.locked;
+    openSheet('<h3>' + esc(flagLabel(f)) + '</h3><p class="notice">Photo taken ' + esc(flagWhen(f)) + '. Frame rate ' + esc(String(S.fps)) + '.</p>' +
+      (photo ? '<img class="fphoto" id="fph" alt="Photo of the timecode display" src="' + photo + '">' : '<p class="notice">No photo for this flag, time only.</p>') +
+      (ro ? '<p class="notice">Timecode: <b>' + esc(f.tc ? tcFmt(f.tc) : 'not typed') + '</b>. Locked, read only.</p>' :
+        '<div><label for="tcin">Timecode shown in the photo (hours, minutes, seconds, frames)</label><input class="tcin" id="tcin" type="text" inputmode="numeric" autocomplete="off" placeholder="00:00:00:00"></div><p class="notice" id="tcmsg"></p>') +
+      (ro ? '' : '<button type="button" class="btn danger" id="fdel">Delete this flag</button>') +
+      '<button type="button" class="btn primary" data-act="closesheet">Done</button>',
+      function (p) {
+        var im = $('#fph', p); if (im) im.addEventListener('click', function () { im.classList.toggle('big'); });
+        if (ro) return;
+        var inp = $('#tcin', p), msg = $('#tcmsg', p); inp.value = tcFmt(f.tc);
+        function check() {
+          var d = tcDigits(inp.value); inp.value = tcFmt(d);
+          if (d.length === 8 && !tcValid(d)) { inp.classList.add('bad'); msg.textContent = 'Check the numbers. Frames must be below ' + nomFps() + '.'; return; }
+          inp.classList.remove('bad'); msg.textContent = d.length === 8 ? 'Saved.' : (d.length ? 'Keep typing, 8 digits in all.' : 'Type it now or later from the photo.');
+          var nf = S.flags[id]; if (!nf) return; nf.tc = d.length === 8 ? d : ''; save('flags', nf);
+        }
+        inp.addEventListener('input', check); check();
+        $('#fdel', p).addEventListener('click', function () {
+          guard('Delete this flag?', 'You are about to delete this sync flag. Are you sure?', 'Its photo and timecode will be erased.', function () { remove('flags', id); photoDel(id); closeSheet(); toast('Flag deleted'); });
+        });
+      });
+  }
+  function flagsSheet() {
+    var list = flagList(), ro = !!S.locked;
+    openSheet('<h3>Sync flags</h3>' +
+      (list.length ? list.map(function (f) {
+        return '<button type="button" class="fl" data-act="openflag" data-id="' + esc(f.id) + '"><span class="noimg" id="th-' + esc(f.id) + '"></span><span><span class="k">' + esc(flagLabel(f)) + '</span><br><span class="when">' + esc(flagWhen(f)) + '</span><br>' +
+          (f.tc ? '<span class="tc">' + esc(tcFmt(f.tc)) + '</span>' : '<span class="need">Type timecode</span>') + '</span></button>';
+      }).join('') : '<p class="notice">No flags yet. Use Start flag, Sync point and Stop flag on the Log tab.</p>') +
+      '<div><label for="fpssel">Frame rate</label><select id="fpssel"' + (ro ? ' disabled' : '') + '>' + FPS_LIST.map(function (x) { return '<option value="' + x + '"' + (x === S.fps ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div>' +
+      '<button type="button" class="btn primary" data-act="closesheet">Done</button>',
+      function (p) {
+        $('#fpssel', p).addEventListener('change', function (e) { S.fps = parseFloat(e.target.value); persistLocal(); toast('Frame rate ' + S.fps); });
+        list.forEach(function (f) {
+          if (!f.hasPhoto) return;
+          photoGet(f.id).then(function (d) { var el = document.getElementById('th-' + f.id); if (d && el) { var im = new Image(); im.src = d; im.alt = ''; el.replaceWith(im); } });
+        });
+      });
+  }
+  function hm(ms) { return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+  function dayLog() {
+    var rs = S.resumes || [], ws = S.wraps || [];
+    if (!rs.length && !ws.length) return '';
+    var all = allTakesSorted(), rows = '';
+    for (var i = 0; i <= rs.length; i++) {
+      var n = i + 1, ts = all.filter(function (t) { return sessAt(Date.parse(t.createdAt)) === n; });
+      var st = i ? rs[i - 1] : (ts.length ? Date.parse(ts[0].createdAt) : null), en = i < rs.length ? rs[i] : Infinity;
+      var w = ws.filter(function (x) { return (st === null || x.at >= st) && x.at < en; }).pop();
+      var d = st ? new Date(st).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+      rows += '<div class="dl"><b>Session ' + n + '</b>' + (d ? ' · ' + d : '') + (i ? ' · resumed ' + hm(st) : '') + (ts.length ? ' · first take ' + hm(Date.parse(ts[0].createdAt)) : '') +
+        ' · ' + ts.length + ' take' + (ts.length === 1 ? '' : 's') + (w ? ' · wrapped ' + hm(w.at) + ' (' + (w.kind === 'end' ? 'end of day' : 'break') + ')' : '') + '</div>';
+    }
+    return '<div class="daylog">' + rows + '</div>';
+  }
+  function wrapSheet() {
+    openSheet('<h3>Wrap</h3><p class="imp-info">This stamps the day, date and time. Then you can save a backup and close the app.</p>' +
+      '<button type="button" class="btn primary" id="wbrk">Break</button><button type="button" class="btn primary" id="wend">End of day</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      function (p) {
+        function go(kind) {
+          S.wraps = S.wraps || []; var at = Date.now(); S.wraps.push({ at: at, kind: kind }); S.wrapped = true; persistLocal();
+          var dt = new Date(at).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' }) + ' ' + hm(at);
+          openSheet('<h3>Wrapped</h3><p class="imp-info">' + (kind === 'end' ? 'End of day' : 'Break') + ' · ' + esc(dt) + '</p><p class="imp-info">Save a backup file now. Then you can close the app. Open it and tap Resume when you are back.</p>' +
+            '<button type="button" class="btn primary" data-act="backup">Save backup file</button><button type="button" class="btn" data-act="closesheet">Done</button>');
+        }
+        $('#wbrk', p).addEventListener('click', function () { go('break'); });
+        $('#wend', p).addEventListener('click', function () { go('end'); });
+      });
+  }
+  function flagsBlock() {
+    var list = flagList(), typed = list.filter(function (f) { return f.tc; }).length;
+    return (S.wrapped ? '<button type="button" class="btn primary wrapbtn" data-act="resume">Resume</button>' : '<button type="button" class="btn wrapbtn" data-act="wrap">Wrap</button>') + '<div class="flagrow"><button type="button" class="btn" data-act="flagstart">Start flag</button><button type="button" class="btn" data-act="flagsync">Sync point</button><button type="button" class="btn" data-act="flagstop">Stop flag</button></div>' +
+      '<button type="button" class="btn small flagsum' + (list.length > typed ? ' warn' : '') + '" data-act="flags">' + (list.length > typed ? (list.length - typed) + ' flag' + (list.length - typed === 1 ? ' still needs its' : 's still need their') + ' timecode · tap to type' : list.length ? list.length + ' flag' + (list.length === 1 ? '' : 's') + ' · ' + typed + ' with timecode · view' : 'No sync flags yet · view') + '</button>' + dayLog();
+  }
+
+  /* ---------- sheets ---------- */
+  function openSheet(html, bind) {
+    var s = $('#sheet');
+    s.innerHTML = '<div class="scrim" data-act="closesheet"></div><div class="panel" role="dialog" aria-modal="true"><div class="grab"></div>' + html + '</div>';
+    s.hidden = false; document.body.classList.add('noscroll');
+    if (bind) bind($('.panel', s));
+  }
+  function closeSheet() { var s = $('#sheet'); s.hidden = true; s.innerHTML = ''; document.body.classList.remove('noscroll'); render(); }
+
+  function chipsHtml(list) { return '<div class="qchips">' + list.map(function (c) { return '<button type="button" data-chip="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div>'; }
+  function bindChips(p, ta, onChange) {
+    p.querySelectorAll('[data-chip]').forEach(function (b) {
+      b.addEventListener('click', function () { ta.value = ta.value ? ta.value.replace(/[;\s]+$/, '') + '; ' + b.getAttribute('data-chip') : b.getAttribute('data-chip'); onChange(); });
+    });
+  }
+
+  function lineSheet(id) {
+    var sc = curScene(), t = curTake(); if (!sc || !t) return;
+    var l = sc.lines.filter(function (x) { return x.id === id; })[0]; if (!l) return;
+    if (S.locked) {
+      var stt = (t.marks || {})[id] || '', nn = (t.notes || {})[id] || '';
+      openSheet('<div>' + (l.type === 'dialogue' ? '<span class="cue">' + esc(l.who) + '</span>' : '') + '<p class="ltxt">' + esc(l.text) + '</p></div>' +
+        '<p class="notice"><b>' + esc(stt ? WORD[stt] : (l.type === 'dialogue' ? 'Still to say' : 'Not logged')) + '</b>' + ((t.stars || {})[id] ? ' · ★ Best delivery' : '') + '</p>' +
+        (nn ? '<p class="ltxt">' + esc(nn) + '</p>' : '<p class="notice">No note.</p>') +
+        '<p class="notice">Locked. Unlock the script to make changes.</p><button type="button" class="btn primary" data-act="closesheet">Done</button>');
+      return;
+    }
+    function btn(st, label) { return '<button type="button" data-set="' + st + '" class="' + (((t.marks || {})[id] || '') === st ? 'on' : '') + '">' + ICON[st] + label + '</button>'; }
+    openSheet('<div>' + (l.type === 'dialogue' ? '<span class="cue">' + esc(l.who) + '</span>' : '') + '<p class="ltxt">' + esc(l.text) + '</p></div>' +
+      '<div class="big3">' + btn('ok', 'Said') + btn('chg', 'Changed') + btn('drop', 'Not said') + '</div>' +
+      (l.type === 'dialogue' ? '<button type="button" class="btn" id="starbtn" aria-pressed="false"></button>' : '') +
+      '<div><label for="lnote">Note for ' + esc(takeName(t)) + '</label><textarea id="lnote" placeholder="What was said, or what went wrong"></textarea>' + chipsHtml(LINE_CHIPS) + '</div>' +
+      '<div class="two"><button type="button" class="btn" id="above">Mark all above as said</button><button type="button" class="btn" id="edtxt">Edit line text</button></div>' +
+      '<div id="edbox" hidden><label for="ltext">Line text</label><textarea id="ltext"></textarea><button type="button" class="btn primary" id="svtxt" style="margin-top:8px;width:100%">Save line text</button></div>' +
+      '<button type="button" class="btn primary" data-act="closesheet">Done</button>',
+      function (p) {
+        var ta = $('#lnote', p); ta.value = (t.notes || {})[id] || '';
+        function saveNote() { t.notes = t.notes || {}; var v = ta.value.trim(); if (v) t.notes[id] = v; else delete t.notes[id]; save('takes', t); }
+        ta.addEventListener('input', saveNote); bindChips(p, ta, saveNote);
+        var sb = $('#starbtn', p);
+        function paintSet() { p.querySelectorAll('[data-set]').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-set') === ((t.marks || {})[id] || '')); }); }
+        function paintStar() { var on = !!(t.stars || {})[id]; sb.setAttribute('aria-pressed', on); sb.textContent = on ? '★ Best delivery. Tap to remove' : '☆ Mark as best delivery'; sb.classList.toggle('primary', on); }
+        if (sb) { paintStar(); sb.addEventListener('click', function () { toggleStar(t, id); paintStar(); paintSet(); }); }
+        p.querySelectorAll('[data-set]').forEach(function (b) {
+          b.addEventListener('click', function () {
+            var st = b.getAttribute('data-set'), cur = (t.marks || {})[id] || '';
+            setMark(t, id, cur === st ? '' : st);
+            p.querySelectorAll('[data-set]').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-set') === ((t.marks || {})[id] || '')); });
+            if (st === 'ok' && cur !== 'ok') setTimeout(closeSheet, 180);
+          });
+        });
+        $('#above', p).addEventListener('click', function () {
+          var stop = false, n = 0;
+          sc.lines.forEach(function (x) { if (stop) return; if (x.type === 'dialogue' && !(t.marks || {})[x.id]) { setMark(t, x.id, 'ok'); n++; } if (x.id === id) stop = true; });
+          toast(n + ' line' + (n === 1 ? '' : 's') + ' marked as said');
+        });
+        $('#edtxt', p).addEventListener('click', function () { $('#edbox', p).hidden = false; $('#ltext', p).value = l.text; $('#ltext', p).focus(); });
+        $('#svtxt', p).addEventListener('click', function () {
+          var v = clean($('#ltext', p).value); if (!v) return;
+          l.text = v; save('scenes', sc); $('.ltxt', p).textContent = v; $('#edbox', p).hidden = true; toast('Line text saved');
+        });
+      });
+  }
+
+  function quickSheet() {
+    function paint() {
+      var q = S.quick || [];
+      openSheet('<h3>Quick buttons</h3><p class="imp-info">These appear on the take screen. Tap them to fill the description.</p><div id="qrows">' +
+        q.map(function (x, i) { return '<div class="qrow"><input type="text" data-i="' + i + '" value="' + esc(x) + '" maxlength="30"><button type="button" class="btn" data-up="' + i + '" aria-label="Move up">↑</button><button type="button" class="btn" data-del="' + i + '" aria-label="Delete">✕</button></div>'; }).join('') +
+        '</div><div class="qrow"><input type="text" id="qnew" placeholder="Add a button" maxlength="30"><button type="button" class="btn primary" id="qadd">Add</button></div>' +
+        '<button type="button" class="btn" id="qseed">Add character names from the script</button><button type="button" class="btn primary" data-act="closesheet">Done</button>',
+        function (p) {
+          p.querySelectorAll('[data-i]').forEach(function (inp) { inp.addEventListener('input', function () { S.quick[Number(inp.getAttribute('data-i'))] = inp.value.trim(); persistLocal(); }); });
+          p.querySelectorAll('[data-up]').forEach(function (b) { b.addEventListener('click', function () { var i = Number(b.getAttribute('data-up')); if (i > 0) { var x = S.quick[i]; S.quick[i] = S.quick[i - 1]; S.quick[i - 1] = x; persistLocal(); paint(); } }); });
+          p.querySelectorAll('[data-del]').forEach(function (b) { b.addEventListener('click', function () { var i = Number(b.getAttribute('data-del')); S.quickGone = (S.quickGone || []).concat(S.quick.splice(i, 1)); persistLocal(); paint(); }); });
+          function add() { var v = $('#qnew', p).value.trim(); if (!v) return; S.quick.push(v); persistLocal(); paint(); }
+          $('#qadd', p).addEventListener('click', add);
+          $('#qnew', p).addEventListener('keydown', function (e) { if (e.key === 'Enter') add(); });
+          $('#qseed', p).addEventListener('click', function () { var n = quickSeed(sceneList(), true); persistLocal(); paint(); toast(n ? n + ' name' + (n === 1 ? '' : 's') + ' added' : 'No new names found'); });
+        });
+    }
+    S.quick = S.quick || []; paint();
+  }
+  function takeSheet() {
+    var sc = curScene(), t = curTake(); if (!sc || !t) return;
+    openSheet('<h3>' + esc(takeName(t)) + '</h3>' +
+      '<div><label for="tsetup">Setup</label><output id="tsetup" class="fixed"></output></div>' +
+      '<div><label>Take number</label><output id="tnum" class="fixed"></output></div>' +
+      '<div><label for="tclip">Camera clip name (optional)</label><input type="text" id="tclip" autocomplete="off" autocapitalize="characters" maxlength="40" placeholder="e.g. A001_C003"></div>' +
+      '<div><label for="tdesc">Description (whole setup)</label><input type="text" id="tdesc" autocomplete="off" maxlength="80" placeholder="e.g. Marlene in chair"><p class="notice" id="qtarget"></p><div class="qchips" id="qchips"></div></div>' +
+      '<div><label>Shot</label><div class="qchips" id="shotchips">' + SHOTS.map(function (x) { return '<button type="button" data-shot="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div></div>' +
+      '<div><label>Support</label><div class="qchips" id="rigchips">' + RIGS.map(function (x) { return '<button type="button" data-rig="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div></div>' +
+      '<div><label>Result</label><div class="seg3"><button type="button" data-res="">Undecided</button><button type="button" data-res="circle">Keeper</button><button type="button" data-res="ng">NG</button><button type="button" data-res="misfire">Misfire</button></div></div>' +
+      '<div><label for="tnote">Take note</label><textarea id="tnote" placeholder="Anything about the whole take"></textarea>' + chipsHtml(TAKE_CHIPS) + '</div>' +
+      '<button type="button" class="btn primary" data-act="closesheet">Done</button><button type="button" class="btn danger" id="tdel">Delete this take</button>',
+      function (p) {
+        var si = $('#tsetup', p), tn = $('#tnum', p), tt = $('#tnote', p);
+        si.textContent = t.setup; tn.textContent = t.take; tt.value = t.note || '';
+        var td = $('#tdesc', p), qc = $('#qchips', p); td.value = t.desc || '';
+        var act = td, NAMES = { tclip: 'Clip', tdesc: 'Description', tnote: 'Take note', tsetup: 'Setup' };
+        function paintQ() {
+          $('#qtarget', p).textContent = 'Buttons fill: ' + (NAMES[act.id] || 'Description');
+          qc.innerHTML = (S.quick || []).map(function (x) { return '<button type="button" data-q="' + esc(x) + '"' + ((' ' + act.value.toLowerCase() + ' ').indexOf(' ' + x.toLowerCase() + ' ') >= 0 ? ' class="on"' : '') + '>' + esc(x) + '</button>'; }).join('') + '<button type="button" id="qedit">Edit buttons</button>';
+          qc.querySelectorAll('[data-q]').forEach(function (b) { b.addEventListener('click', function () {
+            var v = b.getAttribute('data-q'), cur = act.value.trim(), re = new RegExp('(^|\\s)' + v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=\\s|$)', 'i');
+            act.value = re.test(cur) ? cur.replace(re, ' ').replace(/\s+/g, ' ').trim() : (cur ? cur + ' ' : '') + v;
+            act.dispatchEvent(new Event('input', { bubbles: true })); paintQ();
+          }); });
+          $('#qedit', qc).addEventListener('click', function () { quickSheet(); });
+        }
+        p.querySelectorAll('#tclip,#tdesc,#tnote').forEach(function (el) { el.addEventListener('focus', function () { act = el; paintQ(); }); });
+        paintQ();
+        td.addEventListener('input', function () { t.desc = td.value.trim(); save('takes', t); takesOf(t.sceneId).forEach(function (o) { if (o.id !== t.id && o.setup === t.setup) { o.desc = t.desc; save('takes', o); } }); paintQ(); });
+        var tc = $('#tclip', p); tc.value = t.clip || '';
+        tc.addEventListener('input', function () { t.clip = tc.value.trim(); save('takes', t); paintRes(); });
+        function paintRes() { p.querySelectorAll('[data-res]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-res') === (t.result || '')); }); $('h3', p).textContent = takeName(t); }
+        function paintPick() {
+          p.querySelectorAll('[data-shot]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-shot') === (t.shot || '')); });
+          p.querySelectorAll('[data-rig]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-rig') === (t.rig || '')); });
+        }
+        paintPick();
+        p.querySelectorAll('[data-shot]').forEach(function (b) { b.addEventListener('click', function () { var v = b.getAttribute('data-shot'); t.shot = t.shot === v ? '' : v; save('takes', t); paintPick(); }); });
+        p.querySelectorAll('[data-rig]').forEach(function (b) { b.addEventListener('click', function () { var v = b.getAttribute('data-rig'); t.rig = t.rig === v ? '' : v; save('takes', t); paintPick(); }); });
+        paintRes();
+        p.querySelectorAll('[data-res]').forEach(function (b) { b.addEventListener('click', function () { t.result = b.getAttribute('data-res'); save('takes', t); paintRes(); }); });
+        function sv() { t.note = tt.value.trim(); save('takes', t); }
+        tt.addEventListener('input', sv); bindChips(p, tt, sv);
+        $('#tdel', p).addEventListener('click', function () {
+          guard('Delete this take?', 'You are about to delete this take. Are you sure?', 'Its marks, notes and stars will be erased.', function () { remove('takes', t.id); UI.takeId = null; closeSheet(); toast('Take deleted'); });
+        });
+      });
+  }
+
+  function sceneSheet() {
+    var list = sceneList();
+    openSheet('<h3>Choose scene</h3><div class="scenelist">' + list.map(function (s) {
+      var nt = takesOf(s.id).length;
+      return '<button type="button" class="card" data-pick="' + esc(s.id) + '"><div class="th"><span class="tn">' + esc(sceneLabel(s)) + '</span>' + (s.example ? '<span class="pill ex">Example</span>' : '') +
+        '<span class="tm">' + nt + ' take' + (nt === 1 ? '' : 's') + '</span></div><div class="txt" style="font-family:var(--ui);font-weight:600;text-transform:uppercase">' + esc(s.name) + '</div></button>';
+    }).join('') + '</div>',
+      function (p) {
+        p.querySelectorAll('[data-pick]').forEach(function (b) {
+          b.addEventListener('click', function () { UI.sceneId = b.getAttribute('data-pick'); UI.takeId = null; closeSheet(); window.scrollTo(0, 0); });
+        });
+      });
+  }
+
+  function sceneEditSheet(id) {
+    var sc = S.scenes[id]; if (!sc) return;
+    openSheet('<h3>Edit scene</h3><div><label for="sname">Scene heading</label><input type="text" id="sname" autocomplete="off"></div>' +
+      '<div><label for="snum">Scene number</label><input type="text" id="snum" autocomplete="off" maxlength="8"></div>' +
+      '<button type="button" class="btn primary" data-act="closesheet">Done</button><button type="button" class="btn danger" id="sdel">Delete scene and its takes</button>',
+      function (p) {
+        var a = $('#sname', p), b = $('#snum', p); a.value = sc.name; b.value = sc.number || '';
+        a.addEventListener('input', function () { sc.name = a.value.trim() || 'Untitled scene'; save('scenes', sc); });
+        b.addEventListener('input', function () { sc.number = b.value.trim(); save('scenes', sc); });
+        $('#sdel', p).addEventListener('click', function () {
+          guard('Delete this scene?', 'You are about to delete this scene. Are you sure?', 'All takes logged for it will be erased too.', function () {
+          takesOf(sc.id).forEach(function (t) { remove('takes', t.id); });
+          remove('scenes', sc.id); if (UI.sceneId === sc.id) { UI.sceneId = null; UI.takeId = null; } closeSheet(); toast('Scene deleted'); });
+        });
+      });
+  }
+
+  /* ---------- import ---------- */
+  var pdfBusy = false;
+  function loadPdfLib() {
+    return new Promise(function (res, rej) {
+      if (window.pdfjsLib) return res(window.pdfjsLib);
+      var s = document.createElement('script');
+      s.src = 'pdf.js';
+      s.onload = function () { res(window.pdfjsLib); }; s.onerror = function () { rej(new Error('load')); };
+      document.head.appendChild(s);
+    });
+  }
+  async function pdfToText(buf) {
+    var lib = await loadPdfLib();
+    lib.GlobalWorkerOptions.workerSrc = 'pdf.worker.js';
+    var pdf = await lib.getDocument({ data: buf }).promise, out = [];
+    for (var p = 1; p <= pdf.numPages; p++) {
+      var tc = await (await pdf.getPage(p)).getTextContent(), rows = [];
+      tc.items.forEach(function (it) {
+        if (!it.str) return;
+        var y = it.transform[5], row = rows.filter(function (r) { return Math.abs(r.y - y) < 3; })[0];
+        if (!row) { row = { y: y, parts: [] }; rows.push(row); }
+        row.parts.push({ x: it.transform[4], w: it.width || 0, s: it.str });
+      });
+      rows.sort(function (a, b) { return b.y - a.y; });
+      var gaps = [];
+      for (var k = 1; k < rows.length; k++) gaps.push(rows[k - 1].y - rows[k].y);
+      gaps.sort(function (a, b) { return a - b; });
+      var base = gaps.length ? gaps[Math.floor(gaps.length * 0.3)] : 12, prevY = null;
+      rows.forEach(function (r) {
+        r.parts.sort(function (a, b) { return a.x - b.x; });
+        var s = '', prev = null;
+        r.parts.forEach(function (pt) { if (prev && pt.x - (prev.x + prev.w) > 1.5 && !/\s$/.test(prev.s) && !/^\s/.test(pt.s)) s += ' '; s += pt.s; prev = pt; });
+        s = clean(s);
+        if (!s || /^\d+\.?$/.test(s) || /^\(?CONTINUED:?\)?$/i.test(s)) return;
+        if (prevY !== null && prevY - r.y > base * 1.5) out.push('');
+        out.push(s); prevY = r.y;
+      });
+      out.push('');
+    }
+    return out.join('\n');
+  }
+  function importSheet(mode) {
+    var replace = mode !== 'add', oldScenes = sceneList(), oldTakes = Object.keys(S.takes).length;
+    var warn = replace && oldScenes.length ? '<p class="imp-info"><b>This replaces your current ' + oldScenes.length + ' scene' + (oldScenes.length === 1 ? '' : 's') + (oldTakes ? ' and deletes ' + oldTakes + ' logged take' + (oldTakes === 1 ? '' : 's') : '') + '.</b></p>' : '';
+    openSheet('<h3>' + (replace ? 'Load script' : 'Add scenes') + '</h3><p class="imp-info">' + (replace ? 'Paste the script text, or load a PDF. ' : 'Paste the extra scene or scenes, or load a PDF. They are added after your existing scenes. ') + 'Scenes start at each INT. or EXT. heading. Anything before the first heading, like a title page, is skipped.</p>' + warn +
+      '<div><label for="imptxt">Script text</label><textarea id="imptxt" style="min-height:150px" placeholder="Paste script here"></textarea></div>' +
+      '<button type="button" class="btn" id="pdfbtn">Load a PDF instead</button><input type="file" id="pdffile" accept="application/pdf,.pdf,text/plain,.txt" hidden>' +
+      '<p class="imp-info" id="impinfo" aria-live="polite"></p>' +
+      '<button type="button" class="btn primary" id="impgo" disabled>' + (replace ? 'Load script' : 'Add scenes') + '</button>',
+      function (p) {
+        var ta = $('#imptxt', p), info = $('#impinfo', p), go = $('#impgo', p), parsed = [], tmr;
+        function check() {
+          parsed = ta.value.trim() ? parseScript(ta.value) : [];
+          var n = parsed.reduce(function (a, s) { return a + s.lines.length; }, 0);
+          info.textContent = parsed.length ? 'Found ' + parsed.length + ' scene' + (parsed.length === 1 ? '' : 's') + ' and ' + n + ' lines.' : (ta.value.trim() ? 'No lines found yet.' : '');
+          go.disabled = !parsed.length;
+        }
+        ta.addEventListener('input', function () { clearTimeout(tmr); tmr = setTimeout(check, 300); });
+        $('#pdfbtn', p).addEventListener('click', function () { $('#pdffile', p).value = ''; $('#pdffile', p).click(); });
+        $('#pdffile', p).addEventListener('change', async function (e) {
+          var f = e.target.files[0]; if (!f || pdfBusy) return;
+          pdfBusy = true; info.textContent = 'Reading file…';
+          try {
+            ta.value = /\.pdf$/i.test(f.name) || f.type === 'application/pdf' ? await pdfToText(new Uint8Array(await f.arrayBuffer())) : await f.text();
+            check();
+            if (!parsed.length) info.textContent = ta.value.trim() ? 'No lines found. Check the script uses INT. / EXT. headings.' : 'No text found. A scanned PDF has no text to read.';
+          } catch (err) { info.textContent = 'Could not read that file. Paste the text instead.'; }
+          pdfBusy = false;
+        });
+        go.addEventListener('click', function () {
+          if (replace && oldScenes.length) {
+            guard('Replace the script?', 'You are about to replace the script. Are you sure?', 'The current scenes and every logged take will be erased.', function () {
+              Object.keys(S.takes).forEach(function (id) { remove('takes', id); });
+              oldScenes.forEach(function (s) { remove('scenes', s.id); });
+              run();
+            });
+            return;
+          }
+          run();
+        });
+        function run() {
+          var list = replace ? [] : sceneList(), base = list.length ? Math.max.apply(null, list.map(function (s) { return s.order || 0; })) + 1 : 0, first = null;
+          parsed.forEach(function (ps, k) {
+            var sc = { id: uid('s'), name: ps.name, number: ps.number || String(base + k + 1), order: base + k, lines: ps.lines };
+            if (!first) first = sc.id; save('scenes', sc, k * 90);
+          });
+          if (replace) { UI.sceneId = first; UI.takeId = null; UI.tab = 'take'; }
+          quickSeed(parsed); persistLocal();
+          closeSheet(); window.scrollTo(0, 0); toast(parsed.length + ' scene' + (parsed.length === 1 ? '' : 's') + ' added');
+        }
+      });
+  }
+
+  /* ---------- export ---------- */
+  function statusWord(st) { return st === 'ok' ? 'said as written' : st === 'chg' ? 'CHANGED' : st === 'drop' ? 'NOT SAID' : 'not logged'; }
+  function reportText(sc) {
+    var ts = takesOf(sc.id), out = ['SCENE ' + (sc.number || '') + ' ' + sc.name, ts.length + ' take' + (ts.length === 1 ? '' : 's'), ''];
+    var best = [];
+    sc.lines.forEach(function (l) {
+      var w = ts.filter(function (t) { return (t.stars || {})[l.id]; }).map(function (t) { return t.setup + '/' + t.take + (t.clip ? ' (' + t.clip + ')' : ''); });
+      if (w.length) best.push('  ' + (l.who ? l.who + ': ' : '') + l.text + '  ->  ' + w.join(', '));
+    });
+    if (best.length) { out.push('BEST DELIVERIES (setup/take)'); best.forEach(function (b) { out.push(b); }); out.push(''); }
+    ts.forEach(function (t) {
+      var c = { ok: 0, chg: 0, drop: 0, none: 0 };
+      sc.lines.forEach(function (l) { var m = (t.marks || {})[l.id] || ''; if (m || l.type === 'dialogue') c[m || 'none']++; });
+      out.push('SETUP ' + t.setup + ', TAKE ' + t.take + (shotRig(t) ? '  ' + shotRig(t) : '') + (t.result === 'circle' ? ' (KEEPER)' : t.result === 'ng' ? ' (NG)' : t.result === 'misfire' ? ' (MISFIRE)' : '') + '  ' + fmtTime(t.createdAt));
+      out.push('Said ' + c.ok + ', changed ' + c.chg + ', not said ' + c.drop + ', not logged ' + c.none);
+      sc.lines.forEach(function (l) {
+        var m = (t.marks || {})[l.id] || '', n = (t.notes || {})[l.id] || '';
+        var sr = (t.stars || {})[l.id];
+        if (m === 'chg' || m === 'drop' || n || sr) out.push('  [' + statusWord(m) + (sr ? ', BEST' : '') + '] ' + (l.type === 'dialogue' ? l.who + ': ' : '') + l.text + (n ? '  -- ' + n : ''));
+      });
+      if (t.note) out.push('  Take note: ' + t.note);
+      out.push('');
+    });
+    return out.join('\n');
+  }
+  function csvCell(v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function csvFor(scenes) {
+    var tcs = takeTcs();
+    var rows = [['scene_number', 'scene', 'setup', 'take', 'clip', 'description', 'shot', 'support', 'start_tc', 'next_take_tc', 'result', 'keeper_name', 'take_time', 'session', 'take_note', 'line_no', 'type', 'character', 'line_text', 'status', 'best', 'line_note']];
+    scenes.forEach(function (sc) {
+      takesOf(sc.id).forEach(function (t) {
+        sc.lines.forEach(function (l, i) {
+          var m = (t.marks || {})[l.id] || '';
+          rows.push([sc.number, sc.name, t.setup, t.take, t.clip || '', t.desc || '', t.shot || '', t.rig || '', (tcs[t.id] || {}).start || '', (tcs[t.id] || {}).next || '', t.result || '', t.result === 'circle' ? t.kname || '' : '', t.createdAt || '', sessAt(Date.parse(t.createdAt)), t.note || '', i + 1, l.type, l.who || '', l.text, statusWord(m), (t.stars || {})[l.id] ? 'BEST' : '', (t.notes || {})[l.id] || '']);
+        });
+      });
+    });
+    return '﻿' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n');
+  }
+  function resolveCsv(scenes) {
+    var tcs = takeTcs();
+    var rows = [['File Name', 'Scene', 'Shot', 'Take', 'Good Take', 'Comments', 'Start TC', 'Next Take TC', 'Session', 'Description']], missing = 0;
+    scenes.forEach(function (sc) {
+      takesOf(sc.id).forEach(function (t) {
+        if (!t.clip && !(tcs[t.id] || {}).start) missing++;
+        var best = [], chg = [], drop = [], notes = [];
+        sc.lines.forEach(function (l) {
+          if (l.type !== 'dialogue') return;
+          var m = (t.marks || {})[l.id] || '', lab = (l.who ? l.who + ': ' : '') + l.text.replace(/^\([^)]*\)\s*/, '').slice(0, 40);
+          if ((t.stars || {})[l.id]) best.push(lab);
+          if (m === 'chg') chg.push(lab);
+          if (m === 'drop') drop.push(lab);
+          if ((t.notes || {})[l.id]) notes.push(lab + ' [' + t.notes[l.id] + ']');
+        });
+        var good = t.result !== 'misfire' && (t.result === 'circle' || best.length > 0);
+        var parts = [t.desc || '', shotRig(t), (tcs[t.id] || {}).start ? 'TC ' + tcs[t.id].start : '', t.result === 'ng' ? 'NG' : t.result === 'misfire' ? 'MISFIRE' : t.result === 'circle' ? 'KEEPER' + (t.kname ? ': ' + t.kname : '') : '', t.note || '', best.length ? 'BEST: ' + best.join(' / ') : '', chg.length ? 'CHANGED: ' + chg.join(' / ') : '', drop.length ? 'NOT SAID: ' + drop.join(' / ') : '', notes.length ? 'NOTES: ' + notes.join(' / ') : ''].filter(Boolean);
+        rows.push([t.clip || '', sc.number, t.setup, t.take, good ? 'true' : 'false', parts.join(' | '), (tcs[t.id] || {}).start || '', (tcs[t.id] || {}).next || '', sessAt(Date.parse(t.createdAt)), t.desc || '']);
+      });
+    });
+    return { text: '﻿' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n'), n: rows.length - 1, missing: missing };
+  }
+  function markersEdl(scenes) {
+    var tcs = takeTcs(), out = ['TITLE: ' + ((curProj() || {}).name || 'Lined Script') + ' takes', 'FCM: NON-DROP FRAME', ''], n = 0, skipped = 0;
+    function addFrame(tc) {
+      var a = tc.split(':').map(Number), fr = Math.round(S.fps), f = a[3] + 1, sec = a[2], mi = a[1], h = a[0];
+      if (f >= fr) { f = 0; sec++; } if (sec >= 60) { sec = 0; mi++; } if (mi >= 60) { mi = 0; h++; } h = h % 24;
+      var q = function (x) { return (x < 10 ? '0' : '') + x; }; return q(h) + ':' + q(mi) + ':' + q(sec) + ':' + q(f);
+    }
+    scenes.forEach(function (sc) {
+      takesOf(sc.id).forEach(function (t) {
+        var st = (tcs[t.id] || {}).start; if (!st) { skipped++; return; }
+        var good = t.result === 'circle' || nStars(t) > 0, bad = t.result === 'misfire' || t.result === 'ng';
+        var name = ('Sc' + (sc.number || '') + ' S' + t.setup + '/T' + t.take + (t.desc ? ' ' + t.desc : '') + (t.result === 'misfire' ? ' MISFIRE' : t.result === 'ng' ? ' NG' : t.result === 'circle' ? ' KEEPER' + (t.kname ? ': ' + t.kname : '') : good ? ' GOOD' : '')).replace(/[|\r\n]/g, ' ');
+        n++; var num = ('000' + n).slice(-3);
+        out.push(num + '  001      V     C        ' + st + ' ' + addFrame(st) + ' ' + st + ' ' + addFrame(st) + '  ');
+        out.push(' |C:' + (bad ? 'ResolveColorRed' : good ? 'ResolveColorGreen' : 'ResolveColorBlue') + ' |M:' + name + ' |D:1', '');
+      });
+    });
+    return { text: out.join('\r\n'), n: n, skipped: skipped };
+  }
+  async function copyText(text, label) {
+    try { await navigator.clipboard.writeText(text); toast(label + ' copied'); return; } catch (e) {}
+    openSheet('<h3>Copy ' + esc(label) + '</h3><p class="imp-info">Your phone blocked the copy button. Press and hold in the box, choose Select all, then Copy.</p><textarea id="cpy" style="min-height:220px"></textarea><button type="button" class="btn primary" data-act="closesheet">Done</button>',
+      function (p) { var ta = $('#cpy', p); ta.value = text; ta.focus(); ta.select(); });
+  }
+  async function deliver(text, filename, type) {
+    var file = null;
+    try { file = new File([text], filename, { type: type }); } catch (e) {}
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: filename }); return true; } catch (e) { if (e && e.name === 'AbortError') return false; }
+    }
+    var url = URL.createObjectURL(new Blob([text], { type: type })), a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+    toast('Saved ' + filename); return true;
+  }
+  async function saveCsv(scenes, name) { await deliver(csvFor(scenes), name, 'text/csv'); }
+  function stamp() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()); }
+  async function projectJson(withTakes) {
+    var flags = [];
+    if (withTakes) {
+      for (var f of flagList()) { var o = JSON.parse(JSON.stringify(f)); if (f.hasPhoto) o.photo = await photoGet(f.id); flags.push(o); }
+    }
+    return JSON.stringify({ linedscript: 1, name: (curProj() || {}).name || '', exported: new Date().toISOString(), fps: S.fps, resumes: S.resumes || [], wraps: S.wraps || [], wrapped: !!S.wrapped, lockedSetups: S.lockedSetups || [], scenes: sceneList(), takes: withTakes ? Object.keys(S.takes).map(function (k) { return S.takes[k]; }) : [], flags: flags });
+  }
+  async function applyProject(d, name) {
+    name = (name || d.name || 'Restored project').trim() || 'Restored project';
+    if (!sceneList().length && !Object.keys(S.takes).length) {
+      /* the open project is empty: use it */
+      Object.keys(S.flags).forEach(function (fid) { photoDel(fid); });
+      curProj().name = name;
+    } else {
+      persistLocal(); PROJ.current = addProject(name);
+    }
+    S = normaliseS(null); S.fps = d.fps || 25; S.resumes = d.resumes || []; S.wraps = d.wraps || []; S.wrapped = !!d.wrapped; S.lockedSetups = d.lockedSetups || [];
+    d.scenes.forEach(function (sc) { if (sc && sc.id && Array.isArray(sc.lines)) S.scenes[sc.id] = sc; });
+    (d.takes || []).forEach(function (t) { if (t && t.id && t.sceneId && S.scenes[t.sceneId]) S.takes[t.id] = t; });
+    for (var f of (d.flags || [])) {
+      if (!f || !f.id || !isFinite(f.at)) continue;
+      var photo = f.photo; delete f.photo;
+      if (photo) { try { await photoPut(f.id, photo); f.hasPhoto = true; } catch (e) { f.hasPhoto = false; } } else f.hasPhoto = false;
+      S.flags[f.id] = f;
+    }
+    S.locked = (d.takes || []).length > 0 && Object.keys(S.takes).length > 0;
+    saveIndex(); persistLocal(); UI.sceneId = null; UI.takeId = null; UI.tab = 'take'; render(); window.scrollTo(0, 0);
+  }
+  function restoreSheet(d) {
+    var ns = d.scenes.length, nt = (d.takes || []).length, nfl = (d.flags || []).length, empty = !sceneList().length && !Object.keys(S.takes).length;
+    openSheet('<h3>Restore from file</h3><p class="imp-info">The file holds ' + ns + ' scene' + (ns === 1 ? '' : 's') + ' and ' + nt + ' take' + (nt === 1 ? '' : 's') + (nfl ? ' and ' + nfl + ' sync flag' + (nfl === 1 ? '' : 's') : '') + '.</p>' +
+      '<p class="imp-info">' + (empty ? 'It will fill the empty project you have open.' : '<b>It is added as a new project. Your other projects are not touched.</b>') + '</p>' +
+      '<div><label for="rname">Project name</label><input type="text" id="rname" autocomplete="off" maxlength="40"></div>' +
+      '<button type="button" class="btn primary" id="rgo">' + (empty ? 'Restore' : 'Add as new project') + '</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      function (p) {
+        var rn = $('#rname', p); rn.value = d.name || (empty ? (curProj() || {}).name : '') || 'Restored project';
+        $('#rgo', p).addEventListener('click', async function () {
+          await applyProject(d, rn.value); closeSheet(); toast(S.locked ? 'Restored. Locked, read only.' : 'Restored');
+        });
+      });
+  }
+
+  /* ---------- projects ---------- */
+  function projStats(id) {
+    var d = id === PROJ.current ? S : normaliseS(readProject(id));
+    return { sc: Object.keys(d.scenes).length, tk: Object.keys(d.takes).length, lk: d.locked };
+  }
+  function nameSheet(title, initial, btn, done) {
+    openSheet('<h3>' + esc(title) + '</h3><div><label for="pname">Project name</label><input type="text" id="pname" autocomplete="off" maxlength="40" placeholder="e.g. The Other Shoot"></div>' +
+      '<button type="button" class="btn primary" id="pgo">' + esc(btn) + '</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      function (p) {
+        var inp = $('#pname', p); inp.value = initial || '';
+        function go() { var v = inp.value.trim(); if (!v) { toast('Give it a name.'); return; } closeSheet(); done(v); }
+        $('#pgo', p).addEventListener('click', go); inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+        setTimeout(function () { try { inp.focus(); inp.select(); } catch (e) {} }, 150);
+      });
+  }
+  function projectsSheet() {
+    var list = PROJ.list.slice().sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); }), ro = !!S.locked;
+    openSheet('<h3>Projects</h3>' + list.map(function (x) {
+      var st = projStats(x.id), d = new Date(x.updated || x.created || Date.now());
+      return '<button type="button" class="pj' + (x.id === PROJ.current ? ' cur' : '') + '" data-proj="' + esc(x.id) + '"><div class="pn">' + esc(x.name) + (x.id === PROJ.current ? ' · open' : '') + '</div>' +
+        '<div class="pm">' + st.sc + ' scene' + (st.sc === 1 ? '' : 's') + ' · ' + st.tk + ' take' + (st.tk === 1 ? '' : 's') + (st.lk ? ' · locked' : '') + ' · last used ' + esc(d.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) + '</div></button>';
+    }).join('') +
+      '<button type="button" class="btn primary" id="pnew">+ New project</button>' +
+      '<button type="button" class="btn" id="psave">Save this project to a file</button>' +
+      '<button type="button" class="btn" id="pren">Rename this project</button>' +
+      '<button type="button" class="btn danger" id="pdel">Delete this project</button>' +
+      '<button type="button" class="btn" data-act="closesheet">Close</button>',
+      function (p) {
+        p.querySelectorAll('[data-proj]').forEach(function (b) {
+          b.addEventListener('click', function () { var id = b.getAttribute('data-proj'); if (id === PROJ.current) { closeSheet(); return; } closeSheet(); switchProject(id); toast('Opened ' + (PROJ.list.filter(function (x) { return x.id === id; })[0] || {}).name); });
+        });
+        $('#pnew', p).addEventListener('click', function () { nameSheet('New project', '', 'Create project', function (v) { startNewProject(v); toast('New project created'); }); });
+        $('#psave', p).addEventListener('click', function () { closeSheet(); ACT.backup(); });
+        $('#pren', p).addEventListener('click', function () {
+          if (ro) { toast('Locked. Unlock to rename.'); return; }
+          nameSheet('Rename project', (curProj() || {}).name, 'Save name', function (v) { curProj().name = v; saveIndex(); render(); toast('Renamed'); });
+        });
+        $('#pdel', p).addEventListener('click', function () {
+          if (ro) { toast('Locked. Unlock to delete.'); return; }
+          guard('Delete this project?', 'You are about to delete the project "' + ((curProj() || {}).name || '') + '". Are you sure?', 'Its script, takes, notes and sync flags will be erased. Your other projects are not touched.', function () { deleteCurrentProject(); toast('Project deleted'); });
+        });
+      });
+  }
+
+  /* ---------- lock ---------- */
+  var TAKELOCK = { keeper: 1, misfire: 1, takesheet: 1, cycle: 1, open: 1, star: 1, fill: 1, clear: 1 };
+  var BLOCKED = { keeper: 1, newsetup: 1, misfire: 1, flagstart: 1, flagsync: 1, flagstop: 1, import: 1, addscene: 1, clearall: 1, newtake: 1, takesheet: 1, cycle: 1, star: 1, fill: 1, clear: 1, editscene: 1 };
+  /* Delete code. Not secret, just a few deliberate steps. It can only be changed here in the file (by Claude), never inside the app. */
+  var DELETE_CODE = '1234';
+  function deleteAll() {
+    Object.keys(S.takes).forEach(function (id) { remove('takes', id); });
+    sceneList().forEach(function (s) { remove('scenes', s.id); });
+    Object.keys(S.flags).forEach(function (id) { photoDel(id); remove('flags', id); });
+    UI.sceneId = null; UI.takeId = null; render(); toast('Script and takes cleared');
+  }
+  /* Every destructive action goes through guard(): Yes/No, then the code. */
+  function guard(heading, lead, detail, action) {
+    openSheet('<h3>' + esc(heading) + '</h3><p class="imp-info"><b>' + esc(lead) + '</b><br>' + esc(detail) + '</p>' +
+      '<button type="button" class="btn danger" id="dyes">Yes</button><button type="button" class="btn primary" data-act="closesheet">No</button>',
+      function (p) { $('#dyes', p).addEventListener('click', function () { guardCode(action); }); });
+  }
+  function guardCode(action) {
+    openSheet('<h3>Type ' + DELETE_CODE + '</h3><p class="imp-info">Type the number below to carry on. This cannot be undone.</p>' +
+      '<input class="tcin" id="dcode" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="8" placeholder="' + DELETE_CODE + '"><p class="notice" id="dmsg"></p>' +
+      '<button type="button" class="btn danger" id="ddone">Done</button><button type="button" class="btn primary" data-act="closesheet">Cancel</button>',
+      function (p) {
+        var inp = $('#dcode', p), msg = $('#dmsg', p);
+        inp.addEventListener('input', function () { inp.value = inp.value.replace(/\D/g, ''); inp.classList.remove('bad'); msg.textContent = ''; });
+        $('#ddone', p).addEventListener('click', function () {
+          if (inp.value !== DELETE_CODE) { inp.classList.add('bad'); msg.textContent = 'That is not the number. Nothing was changed.'; inp.value = ''; return; }
+          closeSheet(); action();
+        });
+        setTimeout(function () { try { inp.focus(); } catch (e) {} }, 150);
+      });
+  }
+  function deleteSheet() { guard('Delete the script?', 'You are about to delete the script. Are you sure?', 'All scenes, takes, notes and sync flags on this device will be erased.', deleteAll); }
+  function unlockSheet() {
+    openSheet('<h3>Unlock the script?</h3><p class="imp-info">While unlocked, takes, marks and notes can be changed or erased.</p>' +
+      '<button type="button" class="btn primary" id="uyes">Yes, unlock</button><button type="button" class="btn" data-act="closesheet">No</button>',
+      function (p) { $('#uyes', p).addEventListener('click', function () { S.locked = false; persistLocal(); closeSheet(); toast('Unlocked'); }); });
+  }
+
+  /* ---------- clicks ---------- */
+  var ACT = {
+    unlock: function () { unlockSheet(); },
+    projects: function () { projectsSheet(); },
+    wrap: function () { if (S.locked) { toast('Locked.'); return; } wrapSheet(); },
+    resume: function () {
+      if (S.locked) { toast('Locked. Unlock first.'); return; }
+      S.resumes = S.resumes || []; S.resumes.push(Date.now()); S.wrapped = false; persistLocal(); render(); toast('Resumed · new session ' + (S.resumes.length + 1));
+      openCamera('start');
+    },
+    quick: function () { quickSheet(); },
+    locksetup: function (el) {
+      var k = el.getAttribute('data-k') || '', n = k.split('|')[1] || '', on = (S.lockedSetups || []).indexOf(k) >= 0;
+      guard(on ? 'Unlock this setup?' : 'Lock this setup?', 'You are about to ' + (on ? 'unlock' : 'lock') + ' Setup ' + n + '. Are you sure?',
+        on ? 'Its takes, keepers, marks and notes can be changed again.' : 'Its takes, keepers, marks and notes cannot be changed until you unlock it.',
+        function () {
+          S.lockedSetups = S.lockedSetups || [];
+          if (on) S.lockedSetups = S.lockedSetups.filter(function (x) { return x !== k; }); else if (S.lockedSetups.indexOf(k) < 0) S.lockedSetups.push(k);
+          persistLocal(); closeSheet(); toast('Setup ' + n + (on ? ' unlocked' : ' locked'));
+        });
+    },
+    keeper: function () { keeperSheet(); },
+    newsetup: function () {
+      var last = allTakesSorted().pop();
+      if (last && !S.wrapped && new Date(last.createdAt).toDateString() === new Date().toDateString() && !Object.keys(S.takes).some(function (k) { var x = S.takes[k]; return x.sceneId === last.sceneId && x.setup === last.setup && x.result === 'circle'; })) {
+        openSheet('<h3>No keeper yet</h3><p class="imp-info"><b>You don’t have a KEEPER yet. Are you sure?</b></p><button type="button" class="btn primary" data-act="closesheet">No, keep going</button><button type="button" class="btn" id="kyes">Yes, new setup</button>',
+          function (p) { $('#kyes', p).addEventListener('click', function () { closeSheet(); setupSheet(); }); });
+        return;
+      }
+      setupSheet();
+    },
+    misfire: function () { var t = curTake(); if (!t || wrapGuard()) return; var sc = curScene(), last = allTakesSorted().filter(function (x) { return sc && x.sceneId === sc.id; }).pop(); if (last && last.id !== t.id) { toast('You are looking at an earlier take. Go to the latest take first.'); return; } t.result = 'misfire'; save('takes', t); newTake(); },
+    flagstart: function () { openCamera('start'); },
+    flagsync: function () { openCamera('sync'); },
+    flagstop: function () { openCamera('stop'); },
+    flags: function () { flagsSheet(); },
+    openflag: function (el) { flagSheet(el.getAttribute('data-id')); },
+    contrast: function () { HC = !HC; try { localStorage.setItem('linedscript.hc', HC ? '1' : '0'); } catch (e) {} render(); toast('High contrast ' + (HC ? 'on' : 'off')); },
+    update: async function () {
+      if (!navigator.onLine) { toast('No internet. Try again with signal.'); return; }
+      toast('Checking for updates…');
+      try {
+        var txt = await (await fetch('index.html?nocache=' + Date.now(), { cache: 'no-store' })).text();
+        var m = txt.match(/var APP_VER = (\d+);/), live = m ? Number(m[1]) : APP_VER;
+        if (live === APP_VER) { toast('You have the latest version (Ver ' + APP_VER + ').'); return; }
+        toast('Updating to Ver ' + live + '…');
+        try { var reg = await navigator.serviceWorker.getRegistration(); if (reg) await reg.update(); } catch (e) {}
+        var keys = await caches.keys();
+        await Promise.all(keys.filter(function (k) { return k.indexOf('fonts') < 0; }).map(function (k) { return caches.delete(k); }));
+        setTimeout(function () { location.reload(); }, 600);
+      } catch (e) { toast('Could not check. Try again with signal.'); }
+    },
+    tab: function (el) { UI.tab = el.getAttribute('data-tab'); render(); window.scrollTo(0, 0); },
+    scenes: function () { sceneSheet(); },
+    import: function () { importSheet('replace'); },
+    addscene: function () { importSheet('add'); },
+    backup: async function () { if (await deliver(await projectJson(true), 'lined-script-' + slug((curProj() || {}).name) + '-' + stamp() + '.json', 'application/json')) { S.lastBackup = new Date().toISOString(); persistLocal(); render(); } },
+    sharescript: async function () { deliver(await projectJson(false), 'script-only-' + slug((curProj() || {}).name) + '-' + stamp() + '.json', 'application/json'); },
+    restore: function () { var f = $('#restorefile'); f.value = ''; f.click(); },
+    clearall: function () { deleteSheet(); },
+    closesheet: function () { closeSheet(); },
+    newtake: function () { newTake(); },
+    takesheet: function () { takeSheet(); },
+    prevtake: function () { moveTake(-1); },
+    nexttake: function () { moveTake(1); },
+    cycle: function (el) { var t = curTake(); if (!t) return; var id = el.closest('.row').getAttribute('data-id'); setMark(t, id, NEXT[(t.marks || {})[id] || '']); repaintRow(id); },
+    open: function (el) { lineSheet(el.closest('.row').getAttribute('data-id')); },
+    star: function (el) { var t = curTake(); if (!t) return; var id = el.closest('.row').getAttribute('data-id'); toggleStar(t, id); repaintRow(id); },
+    fill: function () { var sc = curScene(), t = curTake(); if (!t) return; var n = 0; vis(sc).forEach(function (l) { if (l.type === 'dialogue' && !(t.marks || {})[l.id]) { t.marks = t.marks || {}; t.marks[l.id] = 'ok'; n++; } }); save('takes', t); render(); toast(n + ' line' + (n === 1 ? '' : 's') + ' marked as said'); },
+    clear: function () { var t = curTake(); if (!t) return; guard('Clear this take?', 'You are about to clear every mark, note and star in this take. Are you sure?', 'The take itself stays.', function () { t.marks = {}; t.notes = {}; t.stars = {}; save('takes', t); render(); toast('Take cleared'); }); },
+    filter: function () { UI.dialogueOnly = !UI.dialogueOnly; render(); },
+    logview: function (el) { UI.logView = el.getAttribute('data-v'); render(); },
+    gotake: function (el) {
+      UI.takeId = el.getAttribute('data-id'); UI.tab = 'take'; render();
+      var ln = el.getAttribute('data-line');
+      if (ln) { var r = document.querySelector('.row[data-id="' + ln + '"]'); if (r) { r.scrollIntoView({ block: 'center' }); r.classList.add('flash'); setTimeout(function () { r.classList.remove('flash'); }, 1600); } } else window.scrollTo(0, 0);
+    },
+    openscene: function (el) { UI.sceneId = el.getAttribute('data-id'); UI.takeId = null; UI.tab = 'take'; render(); window.scrollTo(0, 0); },
+    editscene: function (el) { sceneEditSheet(el.getAttribute('data-id')); },
+    copyreport: function () { var sc = curScene(); if (sc) copyText(reportText(sc), 'Report'); },
+    csvscene: function () { var sc = curScene(); if (sc) { saveCsv([sc], 'scene-' + (sc.number || 'x') + '-takes.csv'); warnUntyped(); } },
+    resolvemarkers: async function () {
+      var r = markersEdl(sceneList());
+      if (!r.n) { toast('No takes have a timecode yet. Add sync flags and type their timecode.'); return; }
+      await deliver(r.text, 'resolve-markers-' + slug((curProj() || {}).name) + '-' + stamp() + '.edl', 'text/plain');
+      if (r.skipped) toast(r.skipped + ' take' + (r.skipped === 1 ? ' has' : 's have') + ' no timecode, left out');
+    },
+    resolvecsv: async function () {
+      var r = resolveCsv(sceneList());
+      if (!r.n) { toast('No takes logged yet.'); return; }
+      await deliver(r.text, 'resolve-metadata-' + slug((curProj() || {}).name) + '-' + stamp() + '.csv', 'text/csv'); warnUntyped();
+      if (r.missing) toast(r.missing + ' take' + (r.missing === 1 ? ' has' : 's have') + ' no timecode and no clip name, so Resolve cannot match ' + (r.missing === 1 ? 'it' : 'them') + '.');
+    },
+    csvall: function () { saveCsv(sceneList(), 'lined-script-all-takes.csv'); warnUntyped(); }
+  };
+  function moveTake(d) {
+    var sc = curScene(), t = curTake(); if (!sc || !t) return;
+    var ts = takesOf(sc.id), i = ts.indexOf(t) + d; if (i < 0 || i >= ts.length) return;
+    UI.takeId = ts[i].id; render(); window.scrollTo(0, 0);
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]'); if (!el) return;
+    var name = el.getAttribute('data-act');
+    if (S.locked && BLOCKED[name]) { toast('Locked. Tap Unlock to make changes.'); return; }
+    if (TAKELOCK[name] && isLockedTake(curTake())) { toast('This setup is locked. Unlock it to make changes.'); return; }
+    var fn = ACT[name]; if (fn) fn(el, e);
+  });
+
+  $('#restorefile').addEventListener('change', async function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    try {
+      var d = JSON.parse(await f.text());
+      if (!d || !d.linedscript || !Array.isArray(d.scenes) || !d.scenes.length) throw new Error('bad');
+      restoreSheet(d);
+    } catch (err) { toast('That is not a Lined Script file.'); }
+  });
+  render();
+  init();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+})();
+</script>
+
+</body>
+</html>

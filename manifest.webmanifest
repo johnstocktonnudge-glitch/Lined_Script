@@ -1,0 +1,16 @@
+{
+  "name": "Lined Script",
+  "short_name": "Lined Script",
+  "description": "Script supervisor's take log: track which lines were said in each take.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#12171c",
+  "theme_color": "#12171c",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
