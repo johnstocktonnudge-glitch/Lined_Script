@@ -316,7 +316,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 26;
+  var APP_VER = 27;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -330,7 +330,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   function saveUI() { try { localStorage.setItem(UIKEY, JSON.stringify({ sceneId: UI.sceneId, takeId: UI.takeId, logView: UI.logView, dialogueOnly: UI.dialogueOnly })); } catch (e) {} }
 
   /* ---------- data ---------- */
-  var S = { scenes: {}, takes: {}, flags: {}, fps: 25, locked: false };
+  var S = { scenes: {}, takes: {}, flags: {}, fps: 24, locked: false };
   var ready = { scenes: false, takes: false }, mode = 'connecting', db = null, slow = false, slowTimer = null;
   var dirty = {}, tomb = {}, recent = {}, timers = {}, latest = {}, inflight = {};
   function mapOf(k) { return k === 'scenes' ? S.scenes : k === 'flags' ? S.flags : S.takes; }
@@ -338,9 +338,16 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var PIDX = 'linedscript.projects';
   var PROJ = { current: null, list: [] };
   function PKEY(id) { return 'linedscript.p.' + id; }
+  var QUICK_DEFAULT = ['CU', 'MID', 'WIDE', '2-SHOT'];
+  /* a project with no quick buttons (and none deliberately deleted) starts with the shot-size buttons; script characters are added after them */
+  function startQuick(d) {
+    var q = Array.isArray(d.quick) ? d.quick.slice() : [];
+    if (!q.length && !(d.quickGone || []).length) q = QUICK_DEFAULT.slice();
+    return q;
+  }
   function normaliseS(d) {
     d = d || {};
-    return { scenes: d.scenes || {}, takes: d.takes || {}, flags: d.flags || {}, fps: d.fps || 25, locked: !!d.locked, lastBackup: d.lastBackup || '', resumes: d.resumes || [], wraps: d.wraps || [], wrapped: !!d.wrapped, quick: d.quick || [], quickGone: d.quickGone || [], lockedSetups: d.lockedSetups || [], focus: d.focus || {} };
+    return { scenes: d.scenes || {}, takes: d.takes || {}, flags: d.flags || {}, fps: d.fps || 24, locked: !!d.locked, lastBackup: d.lastBackup || '', resumes: d.resumes || [], wraps: d.wraps || [], wrapped: !!d.wrapped, quick: startQuick(d), quickGone: d.quickGone || [], lockedSetups: d.lockedSetups || [], focus: d.focus || {} };
   }
   function readProject(id) { try { return JSON.parse(localStorage.getItem(PKEY(id)) || 'null'); } catch (e) { return null; } }
   function saveIndex() { try { localStorage.setItem(PIDX, JSON.stringify(PROJ)); } catch (e) {} }
@@ -901,7 +908,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 
   /* ---------- sync flags, photos and timecode ---------- */
   var FPS_LIST = [23.976, 24, 25, 29.97, 30];
-  function nomFps() { return Math.round(S.fps || 25); }
+  function nomFps() { return Math.round(S.fps || 24); }
   function idb() {
     return new Promise(function (res, rej) {
       var r = indexedDB.open('linedscript-photos', 1);
@@ -1470,7 +1477,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     } else {
       persistLocal(); PROJ.current = addProject(name);
     }
-    S = normaliseS(null); S.fps = d.fps || 25; S.resumes = d.resumes || []; S.wraps = d.wraps || []; S.wrapped = !!d.wrapped; S.lockedSetups = d.lockedSetups || []; S.focus = d.focus || {};
+    S = normaliseS(null); S.fps = d.fps || 24; S.resumes = d.resumes || []; S.wraps = d.wraps || []; S.wrapped = !!d.wrapped; S.lockedSetups = d.lockedSetups || []; S.focus = d.focus || {};
     d.scenes.forEach(function (sc) { if (sc && sc.id && Array.isArray(sc.lines)) S.scenes[sc.id] = sc; });
     (d.takes || []).forEach(function (t) { if (t && t.id && t.sceneId && S.scenes[t.sceneId]) S.takes[t.id] = t; });
     for (var f of (d.flags || [])) {
