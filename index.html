@@ -109,7 +109,7 @@ body.locked .setrow2 .btn { opacity: .45; }
 .seg2 button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .fpick { max-height: 34dvh; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
 .fp { display: block; width: 100%; text-align: left; font: inherit; font-size: 16px; line-height: 1.35; color: var(--ink); background: var(--surface); border: 0; border-bottom: 1px solid var(--line); border-left: 6px solid transparent; padding: 10px 10px; min-height: 48px; }
-.fp.act { color: var(--muted); } .fp.on { background: var(--raised); border-left-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); } .fp.anc { outline: 3px solid var(--accent); outline-offset: -3px; }
+.trl .fp { padding-right: var(--g, 10px); } .fp.act { color: var(--muted); } .fp.on { background: var(--raised); border-left-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); } .fp.anc { outline: 3px solid var(--accent); outline-offset: -3px; }
 .trl { position: relative; } .trl .lbody { padding-right: var(--g, 12px) !important; }
 .gut { position: absolute; right: 2px; top: 0; bottom: 0; display: flex; flex-direction: row-reverse; pointer-events: none; z-index: 2; } .gc { position: relative; width: 14px; }
 .gc .ln { position: absolute; left: 5px; top: 0; bottom: -8px; width: 0; border-left: 4px solid var(--accent); } .gc .ln.top { top: 16px; }
@@ -319,7 +319,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 28;
+  var APP_VER = 29;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -870,11 +870,25 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     var o = opts || {}, plan = o.plan || null, kind = o.mode || 'start';
     var sc = curScene(); if (!sc || (kind !== 'save' && wrapGuard())) return;
     var who = []; sc.lines.forEach(function (l) { if (l.type === 'dialogue' && l.who && who.indexOf(l.who) < 0) who.push(l.who); });
+    /* what is already planned or started in this scene, drawn as lines beside the picker */
+    var prior = [], seenS = {}, letters = 'abcdefghijklmnopqrstuvwxyz';
+    takesOf(sc.id).forEach(function (t) { if (seenS[t.setup]) return; seenS[t.setup] = 1; var f = S.focus && S.focus[sc.id + '|' + t.setup]; if (f && f.length) prior.push({ tag: String(t.setup), f: f, started: true, name: t.desc || '' }); });
+    (S.plans || []).filter(function (q) { return q.sceneId === sc.id && !q.used && (!plan || q.id !== plan.id); }).forEach(function (q, i) { prior.push({ tag: letters[i % 26], f: q.focus, started: false, name: q.name }); });
+    prior.forEach(function (u) { u.first = -1; u.last = -1; sc.lines.forEach(function (l, i) { if (u.f.indexOf(l.id) >= 0) { if (u.first < 0) u.first = i; u.last = i; } }); });
     var sel = {}, mode = 'tap', anchor = -1; if (plan) plan.focus.forEach(function (id) { sel[id] = 1; });
     openSheet('<h3>' + (kind === 'save' ? (plan ? 'Edit saved setup' : 'Save a setup') : plan ? 'Edit setup' : 'New setup') + '</h3><div><label for="sname">What is the setup?</label><input type="text" id="sname" autocomplete="off" maxlength="80" placeholder="e.g. Marlene walks"><div class="qchips" id="sq"></div></div>' +
       '<div><label>Focus: lines this setup is after</label><div class="qchips" id="fwho">' + who.map(function (w, i) { return '<button type="button" data-w="' + i + '">' + esc(w) + '</button>'; }).join('') + '<button type="button" id="fall">All</button><button type="button" id="fnone">Clear</button></div>' +
       '<div class="seg2"><button type="button" data-m="tap" class="on">Tap lines</button><button type="button" data-m="range">Range: first, last</button></div>' +
-      '<p class="notice" id="fcnt"></p><div class="fpick" id="fpick">' + sc.lines.map(function (l, i) { return '<button type="button" class="fp ' + (l.type === 'dialogue' ? 'dlg' : 'act') + '" data-i="' + i + '">' + (l.type === 'dialogue' ? '<b>' + esc(l.who) + '</b> ' : '<i>Action</i> ') + esc(l.text) + '</button>'; }).join('') + '</div></div>' +
+      '<p class="notice" id="fcnt"></p><div class="fpick" id="fpick">' + sc.lines.map(function (l, i) {
+        var btn = '<button type="button" class="fp ' + (l.type === 'dialogue' ? 'dlg' : 'act') + '" data-i="' + i + '">' + (l.type === 'dialogue' ? '<b>' + esc(l.who) + '</b> ' : '<i>Action</i> ') + esc(l.text) + '</button>';
+        if (!prior.length) return btn;
+        var gut = prior.map(function (u) {
+          if (u.first < 0 || i < u.first || i > u.last) return '<span class="gc"></span>';
+          var inf = u.f.indexOf(l.id) >= 0;
+          return '<span class="gc"><i class="ln ' + (inf ? (u.started ? 'solid' : 'dash') : 'dot') + (i === u.first ? ' top' : '') + '"></i>' + (i === u.first ? '<s class="sn">' + esc(u.tag) + '</s>' : '') + '</span>';
+        }).join('');
+        return '<div class="trl" style="--g:' + (prior.length * 14 + 10) + 'px"><div class="gut">' + gut + '</div>' + btn + '</div>';
+      }).join('') + '</div>' + (prior.length ? '<p class="notice">Blue lines: lines already used. Numbers are setups already started (solid). Letters are saved setups (dashed): ' + prior.filter(function (u) { return !u.started; }).map(function (u) { return u.tag + ' = ' + esc(u.name); }).join(', ') + '.</p>' : '') + '</div>' +
       (kind === 'save' ? '<button type="button" class="btn primary" id="ssave">' + (plan ? 'Save changes' : 'Save setup') + '</button>' : plan ? '<div class="two"><button type="button" class="btn primary" id="sgo">Start setup</button><button type="button" class="btn" id="ssave">Save changes</button></div>' : '<button type="button" class="btn primary" id="sgo">Start setup</button>') +
       (plan ? '<button type="button" class="btn danger" id="sdel">Delete saved setup</button>' : '') + '<button type="button" class="btn" data-act="closesheet">Cancel</button>',
       function (p) {
