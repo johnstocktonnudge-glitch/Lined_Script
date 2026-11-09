@@ -320,7 +320,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 32;
+  var APP_VER = 33;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -863,7 +863,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     var lastAll = allTakesSorted().pop();
     var t = { id: uid('t'), sceneId: sc.id, setup: setup, take: 1, clip: lastAll ? nextClip(lastAll.clip) : '', desc: name || '', shot: '', rig: '', result: '', note: '', marks: {}, notes: {}, createdAt: new Date().toISOString() };
     S.focus = S.focus || {}; if (focus && focus.length) S.focus[sc.id + '|' + setup] = focus.slice();
-    (S.plans || []).forEach(function (q) { if (q.id === planId) q.used = true; });
+    (S.plans || []).forEach(function (q) { if (q.id === planId) q.setup = setup; });
     save('takes', t); UI.takeId = t.id; render(); window.scrollTo(0, 0); toast('Setup ' + setup + ' · take 1');
   }
   function setupSheet(opts) {
@@ -873,7 +873,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     /* what is already planned or started in this scene, drawn as lines beside the picker */
     var prior = [], seenS = {}, letters = 'abcdefghijklmnopqrstuvwxyz';
     takesOf(sc.id).forEach(function (t) { if (seenS[t.setup]) return; seenS[t.setup] = 1; var f = S.focus && S.focus[sc.id + '|' + t.setup]; if (f && f.length) prior.push({ tag: String(t.setup), f: f, started: true, name: t.desc || '' }); });
-    (S.plans || []).filter(function (q) { return q.sceneId === sc.id && !q.used && (!plan || q.id !== plan.id); }).forEach(function (q, i) { prior.push({ tag: letters[i % 26], f: q.focus, started: false, name: q.name }); });
+    (S.plans || []).filter(function (q) { return q.sceneId === sc.id && !planLinked(q) && (!plan || q.id !== plan.id); }).forEach(function (q, i) { prior.push({ tag: letters[i % 26], f: q.focus, started: false, name: q.name }); });
     prior.forEach(function (u) { u.first = -1; u.last = -1; sc.lines.forEach(function (l, i) { if (u.f.indexOf(l.id) >= 0) { if (u.first < 0) u.first = i; u.last = i; } }); });
     var sel = {}, mode = 'tap', anchor = -1; if (plan) plan.focus.forEach(function (id) { sel[id] = 1; });
     openSheet('<h3>' + (kind === 'save' ? (plan ? 'Edit saved setup' : 'Save a setup') : plan ? 'Edit setup' : 'New setup') + '</h3><div><label for="sname">What is the setup?</label><input type="text" id="sname" autocomplete="off" maxlength="80" placeholder="e.g. Marlene walks"><div class="qchips" id="sq"></div></div>' +
@@ -931,7 +931,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         function go() { var c = collect(); if (!c) return; closeSheet(); newSetup(c.v, c.ids, plan && plan.id); }
         function keep() {
           var c = collect(); if (!c) return; S.plans = S.plans || [];
-          if (plan) { plan.name = c.v; plan.focus = c.ids; } else S.plans.push({ id: uid('p'), sceneId: sc.id, name: c.v, focus: c.ids, used: false });
+          if (plan) { plan.name = c.v; plan.focus = c.ids; } else S.plans.push({ id: uid('p'), sceneId: sc.id, name: c.v, focus: c.ids, setup: '' });
           persistLocal(); closeSheet(); toast('Setup saved: ' + c.v);
         }
         var g = $('#sgo', p), sv = $('#ssave', p), dl = $('#sdel', p);
@@ -943,12 +943,18 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       });
   }
   /* Saved setups: planned before the shoot, picked from a list on set. */
-  function plansOf(sc) { var u = (S.plans || []).filter(function (q) { return q.sceneId === sc.id; }); return u.filter(function (q) { return !q.used; }).concat(u.filter(function (q) { return q.used; })); }
+  /* A saved setup counts as started only when something was really logged in the setup it started; browsing never counts. */
+  function planLinked(q) { return !!q.setup && Object.keys(S.takes).some(function (k) { var t = S.takes[k]; return t.sceneId === q.sceneId && t.setup === q.setup; }); }
+  function planStarted(q) {
+    if (!q.setup) return false;
+    return Object.keys(S.takes).some(function (k) { var t = S.takes[k]; return t.sceneId === q.sceneId && t.setup === q.setup && (t.result || Object.keys(t.marks || {}).length || Object.keys(t.stars || {}).length || Object.keys(t.notes || {}).length); });
+  }
+  function plansOf(sc) { return (S.plans || []).filter(function (q) { return q.sceneId === sc.id; }); }
   function pickSheet() {
     var sc = curScene(); if (!sc || wrapGuard()) return;
     var ps = plansOf(sc); if (!ps.length) { setupSheet({ mode: 'start' }); return; }
-    openSheet('<h3>New setup</h3><label>Saved setups for this scene</label><div class="plist">' + ps.map(function (q, i) { return '<div class="plr"><button type="button" class="pl' + (q.used ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + q.focus.length + ' line' + (q.focus.length === 1 ? '' : 's') + (q.used ? ' · ✓ started' : '') + '</span></button>' +
-        '<button type="button" class="mv" data-id="' + esc(q.id) + '" data-d="-1" aria-label="Move up"' + (i > 0 && ps[i - 1].used === q.used ? '' : ' disabled') + '>▲</button><button type="button" class="mv" data-id="' + esc(q.id) + '" data-d="1" aria-label="Move down"' + (i < ps.length - 1 && ps[i + 1].used === q.used ? '' : ' disabled') + '>▼</button></div>'; }).join('') + '</div><p class="notice">Use the arrows to change the order.</p>' +
+    openSheet('<h3>New setup</h3><label>Saved setups for this scene</label><div class="plist">' + ps.map(function (q, i) { var st = planStarted(q); return '<div class="plr"><button type="button" class="pl' + (st ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + q.focus.length + ' line' + (q.focus.length === 1 ? '' : 's') + (st ? ' · ✓ started' : '') + '</span></button>' +
+        '<button type="button" class="mv" data-id="' + esc(q.id) + '" data-d="-1" aria-label="Move up"' + (i > 0 ? '' : ' disabled') + '>▲</button><button type="button" class="mv" data-id="' + esc(q.id) + '" data-d="1" aria-label="Move down"' + (i < ps.length - 1 ? '' : ' disabled') + '>▼</button></div>'; }).join('') + '</div><p class="notice">Use the arrows to change the order.</p>' +
       '<button type="button" class="btn" id="pblank">Blank setup: pick lines now</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
       function (p) {
         $('#pblank', p).addEventListener('click', function () { closeSheet(); setupSheet({ mode: 'start' }); });
@@ -964,10 +970,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   function previewSheet(plan) {
     var sc = curScene(); if (!sc || !plan) return;
     openSheet('<h3>' + esc(plan.name) + '</h3><p class="notice">Focus: ' + plan.focus.length + ' line' + (plan.focus.length === 1 ? '' : 's') + '. Everything else is greyed out.</p><div class="fpick">' + sc.lines.filter(function (l) { return plan.focus.indexOf(l.id) >= 0; }).map(function (l) { return '<div class="fp ' + (l.type === 'dialogue' ? 'dlg' : 'act') + ' on">' + (l.type === 'dialogue' ? '<b>' + esc(l.who) + '</b> ' : '<i>Action</i> ') + esc(l.text) + '</div>'; }).join('') + '</div>' +
-      '<div class="two"><button type="button" class="btn primary" id="pstart">Start setup</button><button type="button" class="btn" id="pedit">Edit setup</button></div><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      '<div class="two"><button type="button" class="btn primary" id="pstart">Start setup</button><button type="button" class="btn" id="pedit">Edit setup</button></div>' + (planStarted(plan) ? '<button type="button" class="btn" id="preset">Reset to not started</button>' : '') + '<button type="button" class="btn" data-act="closesheet">Back</button>',
       function (p) {
         $('#pstart', p).addEventListener('click', function () { closeSheet(); newSetup(plan.name, plan.focus, plan.id); });
         $('#pedit', p).addEventListener('click', function () { closeSheet(); setupSheet({ plan: plan, mode: 'edit' }); });
+        var rs = $('#preset', p); if (rs) rs.addEventListener('click', function () { plan.setup = ''; persistLocal(); closeSheet(); toast('Reset: not started'); });
       });
   }
   function newTake() {
