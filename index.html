@@ -80,8 +80,8 @@ body.noscroll { overflow: hidden; }
 .wrapbtn { width: 100%; margin-bottom: 8px; }
 .daylog { margin: 0 0 12px; font-size: 14px; }
 .daylog .dl { padding: 6px 0; border-bottom: 1px solid var(--line); }
-.setrow { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; margin-top: 8px; }
-.setrow .btn { min-height: 56px; font-size: 18px; }
+.setrow { display: grid; grid-template-columns: 1.2fr 1.1fr 1fr; gap: 6px; margin-top: 8px; }
+.setrow .btn { min-height: 56px; font-size: 15px; padding-left: 4px; padding-right: 4px; }
 body.locked .setrow .btn { opacity: .45; }
 .fixed { display: block; font-size: 22px; font-weight: 700; padding: 6px 0; }
 .setrow2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
@@ -117,6 +117,9 @@ body.locked .setrow2 .btn { opacity: .45; }
 .gc .sn { position: absolute; top: 0; left: 0; width: 14px; text-align: center; text-decoration: none; font-size: 12px; font-weight: 800; color: var(--accent); }
 .kflag { display: inline-block; margin: 6px 6px 0 0; padding: 3px 9px; border-radius: 4px; border: 2px solid var(--accent); color: var(--accent); font-weight: 800; font-size: 13px; letter-spacing: .05em; }
 .kflag.yes { background: var(--accent); color: var(--accent-ink); }
+.plist { display: grid; gap: 8px; margin: 8px 0; }
+.pl { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; min-height: 56px; padding: 8px 14px; font: inherit; font-size: 17px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; }
+.pl b { text-transform: uppercase; letter-spacing: .04em; } .pl span { color: var(--muted); font-size: 14px; white-space: nowrap; } .pl.used { opacity: .55; }
 .misfire { width: 100%; margin-top: 8px; min-height: 48px; }
 .qrow { display: flex; gap: 6px; margin-bottom: 8px; }
 .qrow input { flex: 1; min-width: 0; }
@@ -316,7 +319,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 27;
+  var APP_VER = 28;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -347,7 +350,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   }
   function normaliseS(d) {
     d = d || {};
-    return { scenes: d.scenes || {}, takes: d.takes || {}, flags: d.flags || {}, fps: d.fps || 24, locked: !!d.locked, lastBackup: d.lastBackup || '', resumes: d.resumes || [], wraps: d.wraps || [], wrapped: !!d.wrapped, quick: startQuick(d), quickGone: d.quickGone || [], lockedSetups: d.lockedSetups || [], focus: d.focus || {} };
+    return { scenes: d.scenes || {}, takes: d.takes || {}, flags: d.flags || {}, fps: d.fps || 24, locked: !!d.locked, lastBackup: d.lastBackup || '', resumes: d.resumes || [], wraps: d.wraps || [], wrapped: !!d.wrapped, quick: startQuick(d), quickGone: d.quickGone || [], lockedSetups: d.lockedSetups || [], focus: d.focus || {}, plans: d.plans || [] };
   }
   function readProject(id) { try { return JSON.parse(localStorage.getItem(PKEY(id)) || 'null'); } catch (e) { return null; } }
   function saveIndex() { try { localStorage.setItem(PIDX, JSON.stringify(PROJ)); } catch (e) {} }
@@ -682,7 +685,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         (t.result === 'circle' ? '<em class="circle">Keeper</em>' : t.result === 'ng' ? '<em class="ng">NG</em>' : t.result === 'misfire' ? '<em class="ng">Misfire</em>' : '') + '</span></button>'
         : '<div class="tk"><span class="lab">No takes yet</span><span class="num">Ready</span></div>') +
       '<button type="button" class="navb" data-act="nexttake" aria-label="Next take"' + (ix >= 0 && ix < ts.length - 1 ? '' : ' disabled') + '>›</button>' +
-      '</div><div class="setrow"><button type="button" class="btn primary" data-act="newsetup">New setup</button><button type="button" class="btn" data-act="newtake">New take</button></div>' + (t ? '<div class="setrow2"><button type="button" class="btn" data-act="misfire">Misfire · next take</button><button type="button" class="btn keeper' + (t.result === 'circle' ? ' on' : '') + '" data-act="keeper">' + (t.result === 'circle' ? 'Keeper ✓' : 'Keeper') + '</button></div>' : '') + '</div>';
+      '</div><div class="setrow"><button type="button" class="btn primary" data-act="newsetup">New setup</button><button type="button" class="btn" data-act="saveplan">Save setup</button><button type="button" class="btn" data-act="newtake">New take</button></div>' + (t ? '<div class="setrow2"><button type="button" class="btn" data-act="misfire">Misfire · next take</button><button type="button" class="btn keeper' + (t.result === 'circle' ? ' on' : '') + '" data-act="keeper">' + (t.result === 'circle' ? 'Keeper ✓' : 'Keeper') + '</button></div>' : '') + '</div>';
     var ex = sc.example ? '<p class="notice">Example scene. Load your own script on the Script tab, then delete this one.</p>' : '';
     if (!t) return head + ex + '<div class="empty"><h2>Scene ' + esc(sc.number || '') + '</h2><p>Press New take when the camera rolls, then tap each line as it is said.</p></div>';
     return head + ex + '<div class="sum" id="sum">' + sumHtml(sc, t) + '</div><div id="lines">' + vis(sc).map(function (l) { return rowHtml(l, t); }).join('') + '</div>';
@@ -726,14 +729,36 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     return head + body + ex;
   }
 
+  /* Auto-save: every few minutes (and when you leave the app) a snapshot is kept, so you can go back. */
+  var SNAPMAX = 8;
+  function snapKey() { return 'linedscript.snap.' + PROJ.current; }
+  function snapList() { try { return JSON.parse(localStorage.getItem(snapKey()) || '[]'); } catch (e) { return []; } }
+  function snapNow() {
+    if (!PROJ.current || mode !== 'local' || !Object.keys(S.takes).length) return;
+    var str = JSON.stringify(S), l = snapList();
+    if (l.length && l[l.length - 1].json === str) return;
+    l.push({ at: new Date().toISOString(), json: str }); while (l.length > SNAPMAX) l.shift();
+    for (var i = 0; i < 4; i++) { try { localStorage.setItem(snapKey(), JSON.stringify(l)); return; } catch (e) { if (l.length > 1) l.shift(); else return; } }
+  }
+  setInterval(snapNow, 120000);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) snapNow(); });
+  function snapSheet() {
+    var l = snapList().slice().reverse();
+    openSheet('<h3>Auto-saves</h3><p class="notice">Saved by the app every couple of minutes. Pick one to go back to how things were then.</p>' + (l.length ? '<div class="plist">' + l.map(function (x, i) { var d; try { d = JSON.parse(x.json); } catch (e) { d = {}; } var n = Object.keys(d.takes || {}).length; return '<button type="button" class="pl" data-i="' + i + '"><b>' + esc(new Date(x.at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) + '</b><span>' + n + ' take' + (n === 1 ? '' : 's') + '</span></button>'; }).join('') + '</div>' : '<p class="notice">Nothing yet. The first auto-save appears after a few minutes of use.</p>') + '<button type="button" class="btn" data-act="closesheet">Close</button>',
+      function (p) { p.querySelectorAll('.pl').forEach(function (b) { b.addEventListener('click', function () {
+        var x = l[Number(b.getAttribute('data-i'))];
+        guard('Go back to this auto-save?', 'Everything logged since ' + new Date(x.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' will be replaced. Your current state is auto-saved first, so you can come back.', '', function () { snapNow(); S = normaliseS(JSON.parse(x.json)); persistLocal(); closeSheet(); toast('Restored'); });
+      }); }); });
+  }
   function backupHtml() {
     var last = S.lastBackup || '';
     var lastTxt = last ? new Date(last).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'never';
     var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
-    return '<div class="exports"><div class="h">Save and open</div><p class="notice">Your takes are stored on this phone only. Last backup: <b>' + esc(lastTxt) + '</b>.</p>' +
+    return '<div class="exports"><div class="h">Save and open</div><p class="notice">Your takes are saved on this phone every time you tap, with an extra auto-save every couple of minutes. Last backup file: <b>' + esc(lastTxt) + '</b>.</p>' +
       '<button type="button" class="btn" data-act="backup">Save project to a file</button>' +
       '<button type="button" class="btn" data-act="sharescript">Send the script only</button>' +
       '<button type="button" class="btn" data-act="restore">Open from a file</button>' +
+      '<button type="button" class="btn" data-act="autosaves">Auto-saves: go back in time</button>' +
       '<button type="button" class="btn" data-act="contrast">High contrast: ' + (HC ? 'On' : 'Off') + '</button>' +
       '<button type="button" class="btn" data-act="update">Check for updates</button>' +
       (standalone ? '' : '<p class="notice">To use with no signal, add this page to your home screen from your browser menu.</p>') + '<p class="notice" style="margin-top:14px">Lined Script <b>Ver ' + APP_VER + '</b></p></div>';
@@ -831,26 +856,29 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         setTimeout(function () { try { kn.focus(); } catch (e) {} }, 100);
       });
   }
-  function newSetup(name, focus) {
+  function newSetup(name, focus, planId) {
     var sc = curScene(); if (!sc) return;
     if (wrapGuard()) return;
     var ts = takesOf(sc.id), mx = Math.max.apply(null, [0].concat(ts.map(function (x) { return parseInt(x.setup, 10) || 0; }))), setup = String(mx + 1);
     var lastAll = allTakesSorted().pop();
     var t = { id: uid('t'), sceneId: sc.id, setup: setup, take: 1, clip: lastAll ? nextClip(lastAll.clip) : '', desc: name || '', shot: '', rig: '', result: '', note: '', marks: {}, notes: {}, createdAt: new Date().toISOString() };
     S.focus = S.focus || {}; if (focus && focus.length) S.focus[sc.id + '|' + setup] = focus.slice();
+    (S.plans || []).forEach(function (q) { if (q.id === planId) q.used = true; });
     save('takes', t); UI.takeId = t.id; render(); window.scrollTo(0, 0); toast('Setup ' + setup + ' · take 1');
   }
-  function setupSheet() {
-    var sc = curScene(); if (!sc || wrapGuard()) return;
+  function setupSheet(opts) {
+    var o = opts || {}, plan = o.plan || null, kind = o.mode || 'start';
+    var sc = curScene(); if (!sc || (kind !== 'save' && wrapGuard())) return;
     var who = []; sc.lines.forEach(function (l) { if (l.type === 'dialogue' && l.who && who.indexOf(l.who) < 0) who.push(l.who); });
-    var sel = {}, mode = 'tap', anchor = -1;
-    openSheet('<h3>New setup</h3><div><label for="sname">What is the setup?</label><input type="text" id="sname" autocomplete="off" maxlength="80" placeholder="e.g. Marlene walks"><div class="qchips" id="sq"></div></div>' +
+    var sel = {}, mode = 'tap', anchor = -1; if (plan) plan.focus.forEach(function (id) { sel[id] = 1; });
+    openSheet('<h3>' + (kind === 'save' ? (plan ? 'Edit saved setup' : 'Save a setup') : plan ? 'Edit setup' : 'New setup') + '</h3><div><label for="sname">What is the setup?</label><input type="text" id="sname" autocomplete="off" maxlength="80" placeholder="e.g. Marlene walks"><div class="qchips" id="sq"></div></div>' +
       '<div><label>Focus: lines this setup is after</label><div class="qchips" id="fwho">' + who.map(function (w, i) { return '<button type="button" data-w="' + i + '">' + esc(w) + '</button>'; }).join('') + '<button type="button" id="fall">All</button><button type="button" id="fnone">Clear</button></div>' +
       '<div class="seg2"><button type="button" data-m="tap" class="on">Tap lines</button><button type="button" data-m="range">Range: first, last</button></div>' +
       '<p class="notice" id="fcnt"></p><div class="fpick" id="fpick">' + sc.lines.map(function (l, i) { return '<button type="button" class="fp ' + (l.type === 'dialogue' ? 'dlg' : 'act') + '" data-i="' + i + '">' + (l.type === 'dialogue' ? '<b>' + esc(l.who) + '</b> ' : '<i>Action</i> ') + esc(l.text) + '</button>'; }).join('') + '</div></div>' +
-      '<button type="button" class="btn primary" id="sgo">Start setup</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      (kind === 'save' ? '<button type="button" class="btn primary" id="ssave">' + (plan ? 'Save changes' : 'Save setup') + '</button>' : plan ? '<div class="two"><button type="button" class="btn primary" id="sgo">Start setup</button><button type="button" class="btn" id="ssave">Save changes</button></div>' : '<button type="button" class="btn primary" id="sgo">Start setup</button>') +
+      (plan ? '<button type="button" class="btn danger" id="sdel">Delete saved setup</button>' : '') + '<button type="button" class="btn" data-act="closesheet">Cancel</button>',
       function (p) {
-        var sn = $('#sname', p), sq = $('#sq', p);
+        var sn = $('#sname', p), sq = $('#sq', p); if (plan) sn.value = plan.name || '';
         function paint() {
           sq.innerHTML = (S.quick || []).map(function (x) { return '<button type="button" data-q="' + esc(x) + '"' + ((' ' + sn.value.toLowerCase() + ' ').indexOf(' ' + x.toLowerCase() + ' ') >= 0 ? ' class="on"' : '') + '>' + esc(x) + '</button>'; }).join('');
           sq.querySelectorAll('[data-q]').forEach(function (b) { b.addEventListener('click', function () {
@@ -880,14 +908,45 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
           fpaint();
         }); });
         fpaint();
-        function go() {
+        function collect() {
           var ids = sc.lines.filter(function (l) { return sel[l.id]; }).map(function (l) { return l.id; });
-          if (!ids.length) { toast('Pick the lines this setup is after first.'); return; }
-          var v = sn.value.trim(); if (!v) { var nm = []; sc.lines.forEach(function (l) { if (sel[l.id] && l.type === 'dialogue' && l.who && nm.indexOf(l.who) < 0) nm.push(l.who); }); v = nm.join(' & '); } closeSheet(); newSetup(v, ids);
+          if (!ids.length) { toast('Pick the lines this setup is after first.'); return null; }
+          var v = sn.value.trim(); if (!v) { var nm = []; sc.lines.forEach(function (l) { if (sel[l.id] && l.type === 'dialogue' && l.who && nm.indexOf(l.who) < 0) nm.push(l.who); }); v = nm.join(' & '); }
+          return { ids: ids, v: v };
         }
-        $('#sgo', p).addEventListener('click', go);
-        sn.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+        function go() { var c = collect(); if (!c) return; closeSheet(); newSetup(c.v, c.ids, plan && plan.id); }
+        function keep() {
+          var c = collect(); if (!c) return; S.plans = S.plans || [];
+          if (plan) { plan.name = c.v; plan.focus = c.ids; } else S.plans.push({ id: uid('p'), sceneId: sc.id, name: c.v, focus: c.ids, used: false });
+          persistLocal(); closeSheet(); toast('Setup saved: ' + c.v);
+        }
+        var g = $('#sgo', p), sv = $('#ssave', p), dl = $('#sdel', p);
+        if (g) g.addEventListener('click', go);
+        if (sv) sv.addEventListener('click', keep);
+        if (dl) dl.addEventListener('click', function () { guard('Delete saved setup?', 'Delete "' + (plan.name || 'this setup') + '" from your saved list?', 'Takes already logged are not affected.', function () { S.plans = S.plans.filter(function (q) { return q.id !== plan.id; }); persistLocal(); closeSheet(); toast('Saved setup deleted'); }); });
+        sn.addEventListener('keydown', function (e) { if (e.key === 'Enter') { if (kind === 'save') keep(); else go(); } });
         setTimeout(function () { try { sn.focus(); } catch (e) {} }, 100);
+      });
+  }
+  /* Saved setups: planned before the shoot, picked from a list on set. */
+  function plansOf(sc) { var u = (S.plans || []).filter(function (q) { return q.sceneId === sc.id; }); return u.filter(function (q) { return !q.used; }).concat(u.filter(function (q) { return q.used; })); }
+  function pickSheet() {
+    var sc = curScene(); if (!sc || wrapGuard()) return;
+    var ps = plansOf(sc); if (!ps.length) { setupSheet({ mode: 'start' }); return; }
+    openSheet('<h3>New setup</h3><label>Saved setups for this scene</label><div class="plist">' + ps.map(function (q) { return '<button type="button" class="pl' + (q.used ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + q.focus.length + ' line' + (q.focus.length === 1 ? '' : 's') + (q.used ? ' · ✓ started' : '') + '</span></button>'; }).join('') + '</div>' +
+      '<button type="button" class="btn" id="pblank">Blank setup: pick lines now</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      function (p) {
+        $('#pblank', p).addEventListener('click', function () { closeSheet(); setupSheet({ mode: 'start' }); });
+        p.querySelectorAll('.pl').forEach(function (b) { b.addEventListener('click', function () { var id = b.getAttribute('data-id'); closeSheet(); previewSheet((S.plans || []).filter(function (q) { return q.id === id; })[0]); }); });
+      });
+  }
+  function previewSheet(plan) {
+    var sc = curScene(); if (!sc || !plan) return;
+    openSheet('<h3>' + esc(plan.name) + '</h3><p class="notice">Focus: ' + plan.focus.length + ' line' + (plan.focus.length === 1 ? '' : 's') + '. Everything else is greyed out.</p><div class="fpick">' + sc.lines.filter(function (l) { return plan.focus.indexOf(l.id) >= 0; }).map(function (l) { return '<div class="fp ' + (l.type === 'dialogue' ? 'dlg' : 'act') + ' on">' + (l.type === 'dialogue' ? '<b>' + esc(l.who) + '</b> ' : '<i>Action</i> ') + esc(l.text) + '</div>'; }).join('') + '</div>' +
+      '<div class="two"><button type="button" class="btn primary" id="pstart">Start setup</button><button type="button" class="btn" id="pedit">Edit setup</button></div><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      function (p) {
+        $('#pstart', p).addEventListener('click', function () { closeSheet(); newSetup(plan.name, plan.focus, plan.id); });
+        $('#pedit', p).addEventListener('click', function () { closeSheet(); setupSheet({ plan: plan, mode: 'edit' }); });
       });
   }
   function newTake() {
@@ -1466,7 +1525,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     if (withTakes) {
       for (var f of flagList()) { var o = JSON.parse(JSON.stringify(f)); if (f.hasPhoto) o.photo = await photoGet(f.id); flags.push(o); }
     }
-    return JSON.stringify({ linedscript: 1, name: (curProj() || {}).name || '', exported: new Date().toISOString(), fps: S.fps, resumes: S.resumes || [], wraps: S.wraps || [], wrapped: !!S.wrapped, lockedSetups: S.lockedSetups || [], focus: S.focus || {}, scenes: sceneList(), takes: withTakes ? Object.keys(S.takes).map(function (k) { return S.takes[k]; }) : [], flags: flags });
+    return JSON.stringify({ linedscript: 1, name: (curProj() || {}).name || '', exported: new Date().toISOString(), fps: S.fps, resumes: S.resumes || [], wraps: S.wraps || [], wrapped: !!S.wrapped, lockedSetups: S.lockedSetups || [], focus: S.focus || {}, plans: S.plans || [], scenes: sceneList(), takes: withTakes ? Object.keys(S.takes).map(function (k) { return S.takes[k]; }) : [], flags: flags });
   }
   async function applyProject(d, name) {
     name = (name || d.name || 'Restored project').trim() || 'Restored project';
@@ -1477,7 +1536,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     } else {
       persistLocal(); PROJ.current = addProject(name);
     }
-    S = normaliseS(null); S.fps = d.fps || 24; S.resumes = d.resumes || []; S.wraps = d.wraps || []; S.wrapped = !!d.wrapped; S.lockedSetups = d.lockedSetups || []; S.focus = d.focus || {};
+    S = normaliseS(null); S.fps = d.fps || 24; S.resumes = d.resumes || []; S.wraps = d.wraps || []; S.wrapped = !!d.wrapped; S.lockedSetups = d.lockedSetups || []; S.focus = d.focus || {}; S.plans = d.plans || [];
     d.scenes.forEach(function (sc) { if (sc && sc.id && Array.isArray(sc.lines)) S.scenes[sc.id] = sc; });
     (d.takes || []).forEach(function (t) { if (t && t.id && t.sceneId && S.scenes[t.sceneId]) S.takes[t.id] = t; });
     for (var f of (d.flags || [])) {
@@ -1606,15 +1665,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
           persistLocal(); closeSheet(); toast('Setup ' + n + (on ? ' unlocked' : ' locked'));
         });
     },
+    saveplan: function () { if (curScene()) setupSheet({ mode: 'save' }); },
+    autosaves: function () { snapSheet(); },
     keeper: function () { var t = curTake(); if (t && t.result !== 'circle' && !keeperOk(t)) return; keeperSheet(); },
     newsetup: function () {
       var last = allTakesSorted().pop();
       if (last && !S.wrapped && new Date(last.createdAt).toDateString() === new Date().toDateString() && !Object.keys(S.takes).some(function (k) { var x = S.takes[k]; return x.sceneId === last.sceneId && x.setup === last.setup && x.result === 'circle'; })) {
         openSheet('<h3>No keeper yet</h3><p class="imp-info"><b>You don’t have a KEEPER yet. Are you sure?</b></p><button type="button" class="btn primary" data-act="closesheet">No, keep going</button><button type="button" class="btn" id="kyes">Yes, new setup</button>',
-          function (p) { $('#kyes', p).addEventListener('click', function () { closeSheet(); setupSheet(); }); });
+          function (p) { $('#kyes', p).addEventListener('click', function () { closeSheet(); pickSheet(); }); });
         return;
       }
-      setupSheet();
+      pickSheet();
     },
     misfire: function () { var t = curTake(); if (!t || wrapGuard()) return; var sc = curScene(), last = allTakesSorted().filter(function (x) { return sc && x.sceneId === sc.id; }).pop(); if (last && last.id !== t.id) { toast('You are looking at an earlier take. Go to the latest take first.'); return; } t.result = 'misfire'; save('takes', t); newTake(); },
     flagstart: function () { openCamera('start'); },
