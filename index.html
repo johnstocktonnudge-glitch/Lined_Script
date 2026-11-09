@@ -120,6 +120,7 @@ body.locked .setrow2 .btn { opacity: .45; }
 .plist { display: grid; gap: 8px; margin: 8px 0; }
 .pl { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; min-height: 56px; padding: 8px 14px; font: inherit; font-size: 17px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; }
 .pl b { text-transform: uppercase; letter-spacing: .04em; } .pl span { color: var(--muted); font-size: 14px; white-space: nowrap; } .pl.used { opacity: .55; }
+.plr { display: flex; gap: 6px; } .plr .pl { flex: 1; min-width: 0; } .mv { flex: none; width: 52px; min-height: 56px; font: inherit; font-size: 18px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; } .mv:disabled { opacity: .25; }
 .misfire { width: 100%; margin-top: 8px; min-height: 48px; }
 .qrow { display: flex; gap: 6px; margin-bottom: 8px; }
 .qrow input { flex: 1; min-width: 0; }
@@ -319,7 +320,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 29;
+  var APP_VER = 30;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -947,10 +948,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   function pickSheet() {
     var sc = curScene(); if (!sc || wrapGuard()) return;
     var ps = plansOf(sc); if (!ps.length) { setupSheet({ mode: 'start' }); return; }
-    openSheet('<h3>New setup</h3><label>Saved setups for this scene</label><div class="plist">' + ps.map(function (q) { return '<button type="button" class="pl' + (q.used ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + q.focus.length + ' line' + (q.focus.length === 1 ? '' : 's') + (q.used ? ' · ✓ started' : '') + '</span></button>'; }).join('') + '</div>' +
+    openSheet('<h3>New setup</h3><label>Saved setups for this scene</label><div class="plist">' + ps.map(function (q, i) { return '<div class="plr"><button type="button" class="pl' + (q.used ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + q.focus.length + ' line' + (q.focus.length === 1 ? '' : 's') + (q.used ? ' · ✓ started' : '') + '</span></button>' +
+        '<button type="button" class="mv" data-id="' + esc(q.id) + '" data-d="-1" aria-label="Move up"' + (i > 0 && ps[i - 1].used === q.used ? '' : ' disabled') + '>▲</button><button type="button" class="mv" data-id="' + esc(q.id) + '" data-d="1" aria-label="Move down"' + (i < ps.length - 1 && ps[i + 1].used === q.used ? '' : ' disabled') + '>▼</button></div>'; }).join('') + '</div><p class="notice">Use the arrows to change the order.</p>' +
       '<button type="button" class="btn" id="pblank">Blank setup: pick lines now</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
       function (p) {
         $('#pblank', p).addEventListener('click', function () { closeSheet(); setupSheet({ mode: 'start' }); });
+        p.querySelectorAll('.mv').forEach(function (b) { b.addEventListener('click', function () {
+          var id = b.getAttribute('data-id'), dd = Number(b.getAttribute('data-d')), i = ps.map(function (q) { return q.id; }).indexOf(id), j = i + dd;
+          if (i < 0 || j < 0 || j >= ps.length) return;
+          var a = S.plans.indexOf(ps[i]), c = S.plans.indexOf(ps[j]); S.plans[a] = ps[j]; S.plans[c] = ps[i];
+          persistLocal(); pickSheet();
+        }); });
         p.querySelectorAll('.pl').forEach(function (b) { b.addEventListener('click', function () { var id = b.getAttribute('data-id'); closeSheet(); previewSheet((S.plans || []).filter(function (q) { return q.id === id; })[0]); }); });
       });
   }
