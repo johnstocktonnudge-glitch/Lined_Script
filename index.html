@@ -320,7 +320,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 31;
+  var APP_VER = 32;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -1567,7 +1567,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       S.flags[f.id] = f;
     }
     S.locked = (d.takes || []).length > 0 && Object.keys(S.takes).length > 0;
-    saveIndex(); persistLocal(); UI.sceneId = null; UI.takeId = null; UI.tab = 'take'; render(); window.scrollTo(0, 0);
+    saveIndex(); persistLocal(); UI.sceneId = null; UI.takeId = null; UI.tab = 'take';
+    var withPlan = sceneList().filter(function (sc) { return (S.plans || []).some(function (q) { return q.sceneId === sc.id; }); })[0];
+    if (withPlan && !Object.keys(S.takes).length) UI.sceneId = withPlan.id;
+    render(); window.scrollTo(0, 0);
   }
   /* Save project: name it, then choose where it goes (a proper Save dialog where the browser has one, otherwise the share sheet). */
   function saveSheet() {
@@ -1577,10 +1580,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       '<p class="notice">' + (canPick ? 'You will choose the folder next.' : 'Next you choose where it goes: Files, Drive, WhatsApp and so on.') + '</p>' +
       '<button type="button" class="btn primary" id="fsave">Save</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
       function (p) {
-        var fn = $('#fname', p); fn.value = (proj.name || 'Project') + ' ' + stamp();
+        var fn = $('#fname', p); fn.value = proj.name || 'Project';
         async function go() {
           var name = fn.value.replace(/[\\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() || (proj.name || 'Project');
           if (!/\.json$/i.test(name)) name += '.json';
+          var pn = name.replace(/\.json$/i, ''); if (pn && pn !== proj.name) { proj.name = pn; saveIndex(); }
           var ok = false;
           if (canPick) {
             try {
@@ -1595,14 +1599,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         setTimeout(function () { try { fn.focus(); fn.select(); } catch (e) {} }, 100);
       });
   }
-  function restoreSheet(d) {
+  function restoreSheet(d, fname) {
     var ns = d.scenes.length, nt = (d.takes || []).length, nfl = (d.flags || []).length, empty = !sceneList().length && !Object.keys(S.takes).length;
-    openSheet('<h3>Open project</h3><p class="imp-info">The file holds ' + ns + ' scene' + (ns === 1 ? '' : 's') + ' and ' + nt + ' take' + (nt === 1 ? '' : 's') + (nfl ? ' and ' + nfl + ' sync flag' + (nfl === 1 ? '' : 's') : '') + '.</p>' +
+    openSheet('<h3>Open project</h3><p class="imp-info">The file holds ' + ns + ' scene' + (ns === 1 ? '' : 's') + ' and ' + nt + ' take' + (nt === 1 ? '' : 's') + (nfl ? ' and ' + nfl + ' sync flag' + (nfl === 1 ? '' : 's') : '') + '.</p>' + ((d.plans || []).length ? '<p class="imp-info">' + (d.plans || []).length + ' saved setup' + ((d.plans || []).length === 1 ? '' : 's') + ' in ' + d.scenes.filter(function (sc) { return (d.plans || []).some(function (q) { return q.sceneId === sc.id; }); }).map(function (sc) { return 'Scene ' + esc(sc.number || ''); }).join(', ') + '.</p>' : '') +
       '<p class="imp-info">' + (empty ? 'It will fill the empty project you have open.' : '<b>It is added as a new project. Your other projects are not touched.</b>') + '</p>' +
       '<div><label for="rname">Project name</label><input type="text" id="rname" autocomplete="off" maxlength="40"></div>' +
       '<button type="button" class="btn primary" id="rgo">' + (empty ? 'Open' : 'Open as new project') + '</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
       function (p) {
-        var rn = $('#rname', p); rn.value = d.name || (empty ? (curProj() || {}).name : '') || 'Restored project';
+        var rn = $('#rname', p); rn.value = (fname ? fname.replace(/\.json$/i, '').replace(/\s*\(\d+\)$/, '') : '') || d.name || 'Opened project';
         $('#rgo', p).addEventListener('click', async function () {
           await applyProject(d, rn.value); closeSheet(); toast(S.locked ? 'Opened. Locked, read only.' : 'Opened');
         });
@@ -1806,7 +1810,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     try {
       var d = JSON.parse(await f.text());
       if (!d || !d.linedscript || !Array.isArray(d.scenes) || !d.scenes.length) throw new Error('bad');
-      restoreSheet(d);
+      restoreSheet(d, f.name);
     } catch (err) { toast('That is not a Lined Script file.'); }
   });
   render();
