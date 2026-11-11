@@ -320,7 +320,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 33;
+  var APP_VER = 34;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -888,7 +888,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
           return '<span class="gc"><i class="ln ' + (inf ? (u.started ? 'solid' : 'dash') : 'dot') + (i === u.first ? ' top' : '') + '"></i>' + (i === u.first ? '<s class="sn">' + esc(u.tag) + '</s>' : '') + '</span>';
         }).join('');
         return '<div class="trl" style="--g:' + (prior.length * 14 + 10) + 'px"><div class="gut">' + gut + '</div>' + btn + '</div>';
-      }).join('') + '</div>' + (prior.length ? '<p class="notice">Blue lines: lines already used. Numbers are setups already started (solid). Letters are saved setups (dashed): ' + prior.filter(function (u) { return !u.started; }).map(function (u) { return u.tag + ' = ' + esc(u.name); }).join(', ') + '.</p>' : '') + '</div>' +
+      }).join('') + '</div>' + '</div>' +
       (kind === 'save' ? '<button type="button" class="btn primary" id="ssave">' + (plan ? 'Save changes' : 'Save setup') + '</button>' : plan ? '<div class="two"><button type="button" class="btn primary" id="sgo">Start setup</button><button type="button" class="btn" id="ssave">Save changes</button></div>' : '<button type="button" class="btn primary" id="sgo">Start setup</button>') +
       (plan ? '<button type="button" class="btn danger" id="sdel">Delete saved setup</button>' : '') + '<button type="button" class="btn" data-act="closesheet">Cancel</button>',
       function (p) {
