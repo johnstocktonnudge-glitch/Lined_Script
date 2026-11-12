@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 41;
+  var APP_VER = 42;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -689,7 +689,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         (t.result === 'circle' ? '<em class="circle">Keeper</em>' : t.result === 'ng' ? '<em class="ng">NG</em>' : t.result === 'misfire' ? '<em class="ng">Misfire</em>' : '') + '</span></button>'
         : '<div class="tk"><span class="lab">No takes yet</span><span class="num">Ready</span></div>') +
       '<button type="button" class="navb" data-act="nexttake" aria-label="Next take"' + (ix >= 0 && ix < ts.length - 1 ? '' : ' disabled') + '>›</button>' +
-      '</div><div class="setrow"><button type="button" class="btn primary" data-act="newsetup">New setup</button><button type="button" class="btn" data-act="saveplan">Save setup</button><button type="button" class="btn" data-act="newtake">New take</button></div>' + (t ? '<div class="setrow2"><button type="button" class="btn" data-act="misfire">Misfire · next take</button><button type="button" class="btn keeper' + (t.result === 'circle' ? ' on' : '') + '" data-act="keeper">' + (t.result === 'circle' ? 'Keeper ✓' : 'Keeper') + '</button></div>' : '') + '</div>';
+      '</div><div class="setrow"><button type="button" class="btn primary" data-act="newsetup">New setup</button><button type="button" class="btn primary" data-act="saveplan">Save setup</button><button type="button" class="btn primary" data-act="newtake">New take</button></div>' + (t ? '<div class="setrow2"><button type="button" class="btn" data-act="misfire">Misfire · next take</button><button type="button" class="btn keeper' + (t.result === 'circle' ? ' on' : '') + '" data-act="keeper">' + (t.result === 'circle' ? 'Keeper ✓' : 'Keeper') + '</button></div>' : '') + '</div>';
     var ex = sc.example ? '<p class="notice">Example scene. Load your own script on the Script tab, then delete this one.</p>' : '';
     if (!t) return head + ex + '<div class="empty"><h2>Scene ' + esc(sc.number || '') + '</h2><p>Press New take when the camera rolls, then tap each line as it is said.</p></div>';
     return head + ex + '<div class="sum" id="sum">' + sumHtml(sc, t) + '</div><div id="lines">' + vis(sc).map(function (l) { return rowHtml(l, t); }).join('') + '</div>';
