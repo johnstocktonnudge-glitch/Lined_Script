@@ -322,7 +322,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 36;
+  var APP_VER = 37;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -757,11 +757,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   function scriptScreen() {
     var list = sceneList();
     if (!list.length) return emptyScript();
+    var last = S.lastBackup || '', lastTxt = last ? new Date(last).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'never';
     var cur = curScene(), standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
     var main = (S.locked ? '' : '<button type="button" class="btn primary" data-act="quick">Quick buttons</button>') +
       '<button type="button" class="btn primary" data-act="backup">Save project</button>' +
       '<button type="button" class="btn primary" data-act="restore">Open project</button>' +
-      '<p class="notice">Auto Save ON · Tap to save project on your device</p>' +
+      '<p class="notice">Auto Save ON · Tap to save project on your device<br>Last saved file: <b>' + esc(lastTxt) + '</b></p>' +
       '<button type="button" class="btn" data-act="update">Check for updates</button>';
     var more = (S.locked ? '<p class="notice">This script is read only so nothing can be changed or erased by accident.</p><button type="button" class="btn" data-act="unlock">Unlock</button>' :
       '<button type="button" class="btn" data-act="import">Load script</button><button type="button" class="btn" data-act="addscene">Add scenes</button>' +
