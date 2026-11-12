@@ -107,7 +107,7 @@ body.locked .setrow2 .btn { opacity: .45; }
 .fcount { font-weight: 700; font-size: 16px; padding: 4px 0 6px; letter-spacing: .04em; } .fcount.done { color: var(--ok); }
 .seg2 { display: flex; gap: 6px; margin: 8px 0; } .seg2 button { flex: 1; min-height: 46px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); color: var(--ink); font: inherit; font-weight: 600; }
 .seg2 button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-.shead { display: flex; justify-content: space-between; align-items: center; gap: 10px; } .shead h3 { margin: 0; } .shead .btn { width: auto; min-height: 44px; padding: 0 14px; }
+.shead { display: flex; justify-content: space-between; align-items: center; gap: 10px; } .shead h3 { margin: 0; } .shead .btn { width: 168px; min-height: 48px; padding: 4px 6px; flex: none; font-size: 11.5px; letter-spacing: 0; line-height: 1.15; white-space: normal; } .shead h3 { font-size: 16px; white-space: nowrap; }
 .fpick { max-height: 48dvh; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
 .fp { display: block; width: 100%; text-align: left; font: inherit; font-size: 16px; line-height: 1.35; color: var(--ink); background: var(--surface); border: 0; border-bottom: 1px solid var(--line); border-left: 6px solid transparent; padding: 10px 10px; min-height: 48px; }
 .trl .fp { padding-right: var(--g, 10px); } .fp.act { color: var(--muted); } .fp.on { background: var(--raised); border-left-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); } .fp.anc { outline: 3px solid var(--accent); outline-offset: -3px; }
@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 39;
+  var APP_VER = 41;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -876,7 +876,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     (S.plans || []).filter(function (q) { return q.sceneId === sc.id && !planLinked(q) && (!plan || q.id !== plan.id); }).forEach(function (q, i) { prior.push({ tag: letters[i % 26], f: q.focus, started: false, name: q.name }); });
     prior.forEach(function (u) { u.first = -1; u.last = -1; sc.lines.forEach(function (l, i) { if (u.f.indexOf(l.id) >= 0) { if (u.first < 0) u.first = i; u.last = i; } }); });
     var sel = {}, mode = 'tap', anchor = -1; if (plan) plan.focus.forEach(function (id) { sel[id] = 1; });
-    openSheet('<div class="shead"><h3>' + (kind === 'save' ? (plan ? 'Edit saved setup' : 'Save a setup') : plan ? 'Edit setup' : 'New setup') + '</h3><button type="button" class="btn small" id="fmode">Tap</button></div><div><label for="sname">What is the setup?</label><input type="text" id="sname" autocomplete="off" maxlength="80" placeholder="e.g. Marlene walks"><div class="qchips" id="sq"></div></div>' +
+    openSheet('<div class="shead"><h3>' + (kind === 'save' ? (plan ? 'Edit saved setup' : 'Save a setup') : plan ? 'Edit setup' : 'New setup') + '</h3><button type="button" class="btn primary small" id="fmode">Single line selection</button></div><div><label for="sname">What is the setup?</label><input type="text" id="sname" autocomplete="off" maxlength="80" placeholder="e.g. Marlene walks"><div class="qchips" id="sq"></div></div>' +
       '<div><label>Focus: lines this setup is after</label><div class="qchips" id="fwho">' + who.map(function (w, i) { return '<button type="button" data-w="' + i + '">' + esc(w) + '</button>'; }).join('') + '<button type="button" id="fall">All</button><button type="button" id="fnone">Clear</button></div>' +
       '<p class="notice" id="fcnt"></p><div class="fpick" id="fpick">' + sc.lines.map(function (l, i) {
         var btn = '<button type="button" class="fp ' + (l.type === 'dialogue' ? 'dlg' : 'act') + '" data-i="' + i + '">' + (l.type === 'dialogue' ? '<b>' + esc(l.who) + '</b> ' : '<i>Action</i> ') + esc(l.text) + '</button>';
@@ -913,7 +913,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         }); });
         $('#fall', p).addEventListener('click', function () { sc.lines.forEach(function (l) { sel[l.id] = 1; }); anchor = -1; fpaint(); });
         $('#fnone', p).addEventListener('click', function () { sel = {}; anchor = -1; fpaint(); });
-        $('#fmode', p).addEventListener('click', function () { mode = mode === 'tap' ? 'range' : 'tap'; anchor = -1; this.textContent = mode === 'tap' ? 'Tap' : 'Range'; this.classList.toggle('primary', mode === 'range'); fpaint(); });
+        $('#fmode', p).addEventListener('click', function () { mode = mode === 'tap' ? 'range' : 'tap'; anchor = -1; this.textContent = mode === 'tap' ? 'Single line selection' : 'First/last range selection'; fpaint(); });
         p.querySelectorAll('.fp').forEach(function (b) { b.addEventListener('click', function () {
           var i = Number(b.getAttribute('data-i'));
           if (mode === 'range') {
