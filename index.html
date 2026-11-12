@@ -251,6 +251,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .chip.st-none { color: var(--muted); }
 .chip svg { width: 14px; height: 14px; }
 .exports { display: grid; gap: 8px; margin-top: 14px; }
+.more { margin-top: 14px; } .more summary { list-style: none; cursor: pointer; min-height: 48px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--muted); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; } .more summary::-webkit-details-marker { display: none; } .more[open] summary { margin-bottom: 4px; }
 
 /* bottom tabs */
 .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); display: flex; padding: 0 max(8px, env(safe-area-inset-left, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-right, 0px)); }
@@ -321,7 +322,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 35;
+  var APP_VER = 36;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -752,24 +753,24 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         guard('Go back to this auto-save?', 'Everything logged since ' + new Date(x.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' will be replaced. Your current state is auto-saved first, so you can come back.', '', function () { snapNow(); S = normaliseS(JSON.parse(x.json)); persistLocal(); closeSheet(); toast('Restored'); });
       }); }); });
   }
-  function backupHtml() {
-    var last = S.lastBackup || '';
-    var lastTxt = last ? new Date(last).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'never';
-    var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
-    return '<div class="exports"><div class="h">Save and open</div><p class="notice">Your takes are saved on this phone every time you tap, with an extra auto-save every couple of minutes. Last saved file: <b>' + esc(lastTxt) + '</b>.</p>' +
-      '<button type="button" class="btn primary" data-act="backup">Save project</button>' +
-      '<button type="button" class="btn primary" data-act="restore">Open project</button>' +
-      '<button type="button" class="btn" data-act="autosaves">Auto-saves: go back in time</button>' +
-      '<button type="button" class="btn" data-act="contrast">High contrast: ' + (HC ? 'On' : 'Off') + '</button>' +
-      '<button type="button" class="btn" data-act="update">Check for updates</button>' +
-      (standalone ? '' : '<p class="notice">To use with no signal, add this page to your home screen from your browser menu.</p>') + '<p class="notice" style="margin-top:14px">Lined Script <b>Ver ' + APP_VER + '</b></p></div>';
-  }
+  document.addEventListener('toggle', function (e) { if (e.target && e.target.classList && e.target.classList.contains('more')) UI.moreOpen = e.target.open; }, true);
   function scriptScreen() {
     var list = sceneList();
-    var head = S.locked ? '' : '<div class="top"><div class="two"><button type="button" class="btn primary" data-act="import">Load script</button><button type="button" class="btn" data-act="addscene">Add scenes</button></div><button type="button" class="btn" data-act="quick" style="margin-top:8px;width:100%">Quick buttons</button></div>';
     if (!list.length) return emptyScript();
-    var cur = curScene();
-    return head + (S.locked || !cur ? '' : '<button type="button" class="btn" data-act="editscene" data-id="' + esc(cur.id) + '" style="margin-top:8px;width:100%">Edit scene: ' + esc(sceneLabel(cur)) + '</button>') + (S.locked ? '<div class="exports"><div class="h">Locked</div><p class="notice">This script is read only so nothing can be changed or erased by accident.</p><button type="button" class="btn" data-act="unlock">Unlock</button></div>' : '<div class="exports"><div class="h">Start again</div><button type="button" class="btn danger" data-act="clearall">Clear script and all takes</button></div>') + backupHtml();
+    var cur = curScene(), standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+    var main = (S.locked ? '' : '<button type="button" class="btn primary" data-act="quick">Quick buttons</button>') +
+      '<button type="button" class="btn primary" data-act="backup">Save project</button>' +
+      '<button type="button" class="btn primary" data-act="restore">Open project</button>' +
+      '<p class="notice">Auto Save ON · Tap to save project on your device</p>' +
+      '<button type="button" class="btn" data-act="update">Check for updates</button>';
+    var more = (S.locked ? '<p class="notice">This script is read only so nothing can be changed or erased by accident.</p><button type="button" class="btn" data-act="unlock">Unlock</button>' :
+      '<button type="button" class="btn" data-act="import">Load script</button><button type="button" class="btn" data-act="addscene">Add scenes</button>' +
+      (cur ? '<button type="button" class="btn" data-act="editscene" data-id="' + esc(cur.id) + '">Edit scene: ' + esc(sceneLabel(cur)) + '</button>' : '')) +
+      '<button type="button" class="btn" data-act="autosaves">Auto-saves: go back in time</button>' +
+      '<button type="button" class="btn" data-act="contrast">High contrast: ' + (HC ? 'On' : 'Off') + '</button>' +
+      (S.locked ? '' : '<button type="button" class="btn danger" data-act="clearall">Clear script and all takes</button>') +
+      (standalone ? '' : '<p class="notice">To use with no signal, add this page to your home screen from your browser menu.</p>');
+    return '<div class="exports" style="margin-top:0">' + main + '</div><details class="more"' + (UI.moreOpen ? ' open' : '') + '><summary>More</summary><div class="exports">' + more + '</div></details><p class="notice" style="margin-top:14px">Lined Script <b>Ver ' + APP_VER + '</b></p>';
   }
 
   /* Controls tab: the top panel scrolls away; a small tab brings it back as a drop-down. */
