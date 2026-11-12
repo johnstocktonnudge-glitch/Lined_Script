@@ -118,6 +118,7 @@ body.locked .setrow2 .btn { opacity: .45; }
 .gc .sn { position: absolute; top: 0; left: 0; width: 14px; text-align: center; text-decoration: none; font-size: 12px; font-weight: 800; color: var(--accent); }
 .kflag { display: inline-block; margin: 6px 6px 0 0; padding: 3px 9px; border-radius: 4px; border: 2px solid var(--accent); color: var(--accent); font-weight: 800; font-size: 13px; letter-spacing: .05em; }
 .kflag.yes { background: var(--accent); color: var(--accent-ink); }
+.terms { white-space: pre-wrap; font-size: 14px; line-height: 1.4; max-height: 60dvh; overflow-y: auto; margin: 8px 0; color: var(--ink); }
 .plist { display: grid; gap: 8px; margin: 8px 0; }
 .pl { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; min-height: 56px; padding: 8px 14px; font: inherit; font-size: 17px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; }
 .pl b { text-transform: uppercase; letter-spacing: .04em; } .pl span { color: var(--muted); font-size: 14px; white-space: nowrap; } .pl.used { opacity: .55; }
@@ -322,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 37;
+  var APP_VER = 38;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -733,6 +734,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   }
 
   /* Auto-save: every few minutes (and when you leave the app) a snapshot is kept, so you can go back. */
+  var TERMS = "Lined Script licence\n\nCopyright (c) 2026 John Stockton (GitHub: johnstocktonnudge-glitch). All rights reserved except as stated here.\n\n1. Free to use. You may use Lined Script for any purpose, personal or commercial, including on paid film, video or other client work, free of charge.\n\n2. Not for sale. You may not sell, resell, rent, lease or sublicense Lined Script, or any copy or modified version of it. You may not put it inside anything you charge for (an app store listing, a paid bundle, a paid course or a subscription). Using it while you work for paying clients is fine. Charging for the app itself is not.\n\n3. Sharing. You may share a link to Lined Script, or pass on an unmodified copy, free of charge, as long as this licence and the copyright notice stay with it.\n\n4. Changes. You may change a copy for your own use. You may not publish or distribute changed versions without written permission.\n\n5. Ownership. John Stockton owns Lined Script, its name, its icons and its design. This licence does not transfer ownership or any other right to you. You may not claim it as your own, remove the notices, or register or claim ownership of it or its name.\n\n6. No warranty. Lined Script is provided \"as is\", with no promise that it will work, be error free, or keep your data safe. To the fullest extent the law allows, the owner is not liable for lost footage, lost data, lost time or any other loss or damage from using it. Back up your work with Save project.\n\n7. Privacy. Your scripts, takes and projects stay on your own device. The app collects nothing and sends nothing about you. When online it loads its own files and a font from Google Fonts.\n\n8. Other people's code. The PDF reader files (pdf.js and pdf.worker.js) are by Mozilla and keep their own licence, Apache License 2.0. Their notices are kept at the top of those files.\n\n9. Ending. If you break these terms, your permission to use Lined Script ends. This licence is governed by the law of England and Wales.\n";
   var SNAPMAX = 8;
   function snapKey() { return 'linedscript.snap.' + PROJ.current; }
   function snapList() { try { return JSON.parse(localStorage.getItem(snapKey()) || '[]'); } catch (e) { return []; } }
@@ -769,6 +771,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       (cur ? '<button type="button" class="btn" data-act="editscene" data-id="' + esc(cur.id) + '">Edit scene: ' + esc(sceneLabel(cur)) + '</button>' : '')) +
       '<button type="button" class="btn" data-act="autosaves">Auto-saves: go back in time</button>' +
       '<button type="button" class="btn" data-act="contrast">High contrast: ' + (HC ? 'On' : 'Off') + '</button>' +
+      '<button type="button" class="btn" data-act="terms">About and licence</button>' +
       (S.locked ? '' : '<button type="button" class="btn danger" data-act="clearall">Clear script and all takes</button>') +
       (standalone ? '' : '<p class="notice">To use with no signal, add this page to your home screen from your browser menu.</p>');
     return '<div class="exports" style="margin-top:0">' + main + '</div><details class="more"' + (UI.moreOpen ? ' open' : '') + '><summary>More</summary><div class="exports">' + more + '</div></details><p class="notice" style="margin-top:14px">Lined Script <b>Ver ' + APP_VER + '</b></p>';
@@ -1722,6 +1725,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     },
     saveplan: function () { if (curScene()) setupSheet({ mode: 'save' }); },
     autosaves: function () { snapSheet(); },
+    terms: function () { openSheet('<h3>About and licence</h3><div class="terms">' + esc(TERMS) + '</div><button type="button" class="btn" data-act="closesheet">Close</button>'); },
     keeper: function () { var t = curTake(); if (t && t.result !== 'circle' && !keeperOk(t)) return; keeperSheet(); },
     newsetup: function () {
       var last = allTakesSorted().pop();
