@@ -114,7 +114,7 @@ body.locked .setrow2 .btn { opacity: .45; }
 .trl { position: relative; } .trl .lbody { padding-right: var(--g, 12px) !important; }
 .gut { position: absolute; right: 2px; top: 0; bottom: 0; display: flex; flex-direction: row-reverse; pointer-events: none; z-index: 2; } .gc { position: relative; width: 14px; }
 .gc .ln { position: absolute; left: 5px; top: 0; bottom: -8px; width: 0; border-left: 4px solid var(--accent); } .gc .ln.top { top: 16px; }
-.gc .ln.dash { border-left-style: dashed; } .gc .ln.dot { border-left: 3px dotted var(--accent); }
+.gc .ln.cov { border-left: 6px solid #ff1a1a; left: 4px; top: 0; bottom: 0; } .gc .ln.cov.cont { bottom: -8px; } .gc .ln.dash { border-left-style: dashed; } .gc .ln.dot { border-left: 3px dotted var(--accent); }
 .gc .sn { position: absolute; top: 0; left: 0; width: 14px; text-align: center; text-decoration: none; font-size: 12px; font-weight: 800; color: var(--accent); }
 .kflag { display: inline-block; margin: 6px 6px 0 0; padding: 3px 9px; border-radius: 4px; border: 2px solid var(--accent); color: var(--accent); font-weight: 800; font-size: 13px; letter-spacing: .05em; }
 .kflag.yes { background: var(--accent); color: var(--accent-ink); }
@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 49;
+  var APP_VER = 50;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -651,7 +651,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     var cv = sceneCover(sc);
     var head = '<div class="top">' + sceneButton(sc) + '</div><div class="sum">' + coverBar(cv.tot) +
       '<div class="qa"><button type="button" class="btn small" data-act="filter">' + (UI.dialogueOnly ? 'Show action' : 'Dialogue only') + '</button></div></div>' +
-      '<p class="notice">Read only. Green: said. Amber: only said with changes. Red: not said yet. Blue line: a setup\'s focus. Solid: it has a keeper. Dashed: no keeper yet.</p>';
+      '<p class="notice">Read only. Green: said. Amber: only said with changes. Red: not said yet. Bright red line: covered by a saved setup. Blue line: a setup\'s focus. Solid: it has a keeper. Dashed: no keeper yet.</p>';
     var L = vis(sc), ts = takesOf(sc.id), seen = {}, setups = [];
     ts.forEach(function (t) { if (!seen[t.setup]) { seen[t.setup] = 1; var f = S.focus && S.focus[sc.id + '|' + t.setup]; if (f && f.length) setups.push({ n: t.setup, f: f }); } });
     setups.forEach(function (u) {
@@ -660,8 +660,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       u.keep = ts.filter(function (t) { return t.setup === u.n && t.result === 'circle'; }).map(function (t) { return t.take; });
       var kt = ts.filter(function (t) { return t.setup === u.n && t.result === 'circle' && t.kname; })[0]; u.kname = kt ? kt.kname : '';
     });
+    var cu = {}; (S.plans || []).forEach(function (q) { if (q.sceneId === sc.id) (q.focus || []).forEach(function (id) { cu[id] = 1; }); });
+    var cov = L.map(function (l) { return !!cu[l.id]; }), anyCov = cov.some(Boolean);
+    L.forEach(function (l, i) { if (!cov[i] && l.type !== 'dialogue') { var a = -1, b = -1, k; for (k = i - 1; k >= 0; k--) if (L[k].type === 'dialogue') { a = k; break; } for (k = i + 1; k < L.length; k++) if (L[k].type === 'dialogue') { b = k; break; } if (a >= 0 && b >= 0 && cov[a] && cov[b]) cov[i] = 'br'; } });
     var rows = L.map(function (l, i) {
-      var gut = setups.map(function (u) {
+      var covLane = anyCov ? '<span class="gc">' + (cov[i] ? '<i class="ln cov' + (cov[i + 1] ? ' cont' : '') + '"></i>' : '') + '</span>' : '';
+      var gut = covLane + setups.map(function (u) {
         if (u.first < 0 || i < u.first || i > u.last) return '<span class="gc"></span>';
         var inf = u.f.indexOf(l.id) >= 0, cls = inf ? (u.keep.length ? 'ln solid' : 'ln dash') : 'ln dot';
         return '<span class="gc"><i class="' + cls + (i === u.first ? ' top' : '') + '"></i>' + (i === u.first ? '<s class="sn">' + esc(u.n) + '</s>' : '') + '</span>';
@@ -676,7 +680,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         var bd = (c.ok ? '<span class="b-ok">SAID ' + c.ok + '</span>' : '') + (c.chg ? '<span class="b-chg">CHANGED ' + c.chg + '</span>' : '') + (c.drop ? '<span class="b-drop">NOT SAID ' + c.drop + '</span>' : '') + (c.star ? '<span class="b-star">★ ' + c.star + '</span>' : '') || '<span class="b-drop">NOT SAID YET</span>';
         row = '<div class="row trk st-' + st + '"><span class="mark">' + ICON[st === 'todo' ? '' : st] + '</span><span class="lbody"><span class="cue">' + esc(l.who) + '</span><span class="txt">' + esc(l.text) + '</span><span class="bd">' + bd + '</span>' + flag + '</span></div>';
       }
-      return setups.length ? '<div class="trl" style="--g:' + (setups.length * 14 + 12) + 'px"><div class="gut">' + gut + '</div>' + row + '</div>' : row;
+      var nl = setups.length + (anyCov ? 1 : 0);
+      return nl ? '<div class="trl" style="--g:' + (nl * 14 + 12) + 'px"><div class="gut">' + gut + '</div>' + row + '</div>' : row;
     }).join('');
     return head + '<div id="lines">' + rows + '</div>';
   }
