@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 46;
+  var APP_VER = 47;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -954,7 +954,13 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     var sc = curScene(); if (!sc || wrapGuard()) return;
     var ps = plansOf(sc); if (!ps.length) { setupSheet({ mode: 'start' }); return; }
     var sel = ro && ro.sel || '';
-    function rows() { return ps.map(function (q) { var st = planStarted(q); return '<button type="button" class="pl' + (st ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + q.focus.length + ' line' + (q.focus.length === 1 ? '' : 's') + (st ? ' · ✓ started' : '') + '</span></button>'; }).join(''); }
+    function scriptRanks() {
+          var mx = 0, fix = false; (S.plans || []).forEach(function (q) { if (q.seq > mx) mx = q.seq; });
+          (S.plans || []).forEach(function (q) { if (!q.seq) { q.seq = ++mx; fix = true; } }); if (fix) persistLocal();
+          function idx(q) { var m = 1e9; q.focus.forEach(function (id) { for (var k = 0; k < sc.lines.length; k++) if (sc.lines[k].id === id && k < m) m = k; }); return m; }
+          var o = ps.slice().sort(function (x, y) { return idx(x) - idx(y) || x.seq - y.seq; }), r = {}; o.forEach(function (q, n) { r[q.id] = n + 1; }); return r;
+        }
+        function rows() { var rk = scriptRanks(); return ps.map(function (q, qi) { var st = planStarted(q); return '<button type="button" class="pl' + (st ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + (st ? '✓ ' : '') + (qi + 1) + '-' + rk[q.id] + '</span></button>'; }).join(''); }
     openSheet('<div class="shead"><h3>New setup</h3><button type="button" class="btn small" id="preorder">Reorder</button></div>' +
       '<div id="pmvbar" class="two" hidden><button type="button" class="btn primary" id="pup">&#9650; Up</button><button type="button" class="btn primary" id="pdn">&#9660; Down</button></div>' +
       '<label id="plabel">Saved setups for this scene</label><div class="plist" id="plist">' + rows() + '</div>' +
@@ -967,6 +973,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
           var i = ps.map(function (q) { return q.id; }).indexOf(sel);
           up.disabled = i <= 0; dn.disabled = i < 0 || i >= ps.length - 1;
         }
+        function renum() { var rk = scriptRanks(); ps.forEach(function (q, qi) { var b = btnOf(q.id), sp = b && b.querySelector('span'); if (sp) sp.textContent = (planStarted(q) ? '✓ ' : '') + (qi + 1) + '-' + rk[q.id]; }); }
         function setMode(on) {
           reorder = on; bar.hidden = !on; rb.textContent = on ? 'Done' : 'Reorder'; rb.classList.toggle('primary', on);
           lab.textContent = on ? 'Tap a setup, then use Up and Down' : 'Saved setups for this scene'; refresh();
@@ -978,7 +985,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
           var t = ps[i]; ps[i] = ps[j]; ps[j] = t;
           var el = btnOf(sel), other = btnOf(ps[i].id);
           if (dd < 0) list.insertBefore(el, other); else list.insertBefore(other, el);
-          persistLocal(); refresh(); el.scrollIntoView({ block: 'nearest' });
+          persistLocal(); renum(); refresh(); el.scrollIntoView({ block: 'nearest' });
         }
         rb.addEventListener('click', function () { setMode(!reorder); });
         up.addEventListener('click', function () { move(-1); });
