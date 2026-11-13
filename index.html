@@ -122,7 +122,7 @@ body.locked .setrow2 .btn { opacity: .45; }
 .plist { display: grid; gap: 8px; margin: 8px 0; }
 .pl { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; min-height: 56px; padding: 8px 14px; font: inherit; font-size: 17px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; }
 .pl b { text-transform: uppercase; letter-spacing: .04em; } .pl span { color: var(--muted); font-size: 14px; white-space: nowrap; } .pl.used { opacity: .55; }
-.plr { display: flex; gap: 6px; } .plr .pl { flex: 1; min-width: 0; } .mv { flex: none; width: 52px; min-height: 56px; font: inherit; font-size: 18px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; } .mv:disabled { opacity: .25; }
+.pl.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); } .pl.sel span { color: var(--accent-ink); } #pmvbar[hidden] { display: none; } #pmvbar .btn:disabled { opacity: .35; } .mv { flex: none; width: 52px; min-height: 56px; font: inherit; font-size: 18px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; } .mv:disabled { opacity: .25; }
 .misfire { width: 100%; margin-top: 8px; min-height: 48px; }
 .qrow { display: flex; gap: 6px; margin-bottom: 8px; }
 .qrow input { flex: 1; min-width: 0; }
@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 42;
+  var APP_VER = 43;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -950,21 +950,45 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     return Object.keys(S.takes).some(function (k) { var t = S.takes[k]; return t.sceneId === q.sceneId && t.setup === q.setup && (t.result || Object.keys(t.marks || {}).length || Object.keys(t.stars || {}).length || Object.keys(t.notes || {}).length); });
   }
   function plansOf(sc) { return (S.plans || []).filter(function (q) { return q.sceneId === sc.id; }); }
-  function pickSheet() {
+  function pickSheet(ro) {
     var sc = curScene(); if (!sc || wrapGuard()) return;
     var ps = plansOf(sc); if (!ps.length) { setupSheet({ mode: 'start' }); return; }
-    openSheet('<h3>New setup</h3><label>Saved setups for this scene</label><div class="plist">' + ps.map(function (q, i) { var st = planStarted(q); return '<div class="plr"><button type="button" class="pl' + (st ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + q.focus.length + ' line' + (q.focus.length === 1 ? '' : 's') + (st ? ' · ✓ started' : '') + '</span></button>' +
-        '<button type="button" class="mv" data-id="' + esc(q.id) + '" data-d="-1" aria-label="Move up"' + (i > 0 ? '' : ' disabled') + '>▲</button><button type="button" class="mv" data-id="' + esc(q.id) + '" data-d="1" aria-label="Move down"' + (i < ps.length - 1 ? '' : ' disabled') + '>▼</button></div>'; }).join('') + '</div><p class="notice">Use the arrows to change the order.</p>' +
-      '<button type="button" class="btn" id="pblank">Blank setup: pick lines now</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+    var sel = ro && ro.sel || '';
+    function rows() { return ps.map(function (q) { var st = planStarted(q); return '<button type="button" class="pl' + (st ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + q.focus.length + ' line' + (q.focus.length === 1 ? '' : 's') + (st ? ' · ✓ started' : '') + '</span></button>'; }).join(''); }
+    openSheet('<div class="shead"><h3>New setup</h3><button type="button" class="btn small" id="preorder">Reorder</button></div>' +
+      '<div id="pmvbar" class="two" hidden><button type="button" class="btn primary" id="pup">&#9650; Up</button><button type="button" class="btn primary" id="pdn">&#9660; Down</button></div>' +
+      '<label id="plabel">Saved setups for this scene</label><div class="plist" id="plist">' + rows() + '</div>' +
+      '<button type="button" class="btn" id="pblank">Blank setup: pick lines now</button><button type="button" class="btn" id="pclose" data-act="closesheet">Cancel</button>',
       function (p) {
-        $('#pblank', p).addEventListener('click', function () { closeSheet(); setupSheet({ mode: 'start' }); });
-        p.querySelectorAll('.mv').forEach(function (b) { b.addEventListener('click', function () {
-          var id = b.getAttribute('data-id'), dd = Number(b.getAttribute('data-d')), i = ps.map(function (q) { return q.id; }).indexOf(id), j = i + dd;
+        var reorder = false, list = $('#plist', p), bar = $('#pmvbar', p), lab = $('#plabel', p), rb = $('#preorder', p), up = $('#pup', p), dn = $('#pdn', p), pc = $('#pclose', p);
+        function btnOf(id) { return list.querySelector('.pl[data-id="' + id + '"]'); }
+        function refresh() {
+          list.querySelectorAll('.pl').forEach(function (b) { b.classList.toggle('sel', reorder && b.getAttribute('data-id') === sel); });
+          var i = ps.map(function (q) { return q.id; }).indexOf(sel);
+          up.disabled = i <= 0; dn.disabled = i < 0 || i >= ps.length - 1;
+        }
+        function setMode(on) {
+          reorder = on; bar.hidden = !on; rb.textContent = on ? 'Done' : 'Reorder'; rb.classList.toggle('primary', on);
+          lab.textContent = on ? 'Tap a setup, then use Up and Down' : 'Saved setups for this scene'; refresh();
+        }
+        function move(dd) {
+          var i = ps.map(function (q) { return q.id; }).indexOf(sel), j = i + dd;
           if (i < 0 || j < 0 || j >= ps.length) return;
           var a = S.plans.indexOf(ps[i]), c = S.plans.indexOf(ps[j]); S.plans[a] = ps[j]; S.plans[c] = ps[i];
-          persistLocal(); pickSheet();
-        }); });
-        p.querySelectorAll('.pl').forEach(function (b) { b.addEventListener('click', function () { var id = b.getAttribute('data-id'); closeSheet(); previewSheet((S.plans || []).filter(function (q) { return q.id === id; })[0]); }); });
+          var t = ps[i]; ps[i] = ps[j]; ps[j] = t;
+          var el = btnOf(sel), other = btnOf(ps[i].id);
+          if (dd < 0) list.insertBefore(el, other); else list.insertBefore(other, el);
+          persistLocal(); refresh(); el.scrollIntoView({ block: 'nearest' });
+        }
+        rb.addEventListener('click', function () { setMode(!reorder); });
+        up.addEventListener('click', function () { move(-1); });
+        dn.addEventListener('click', function () { move(1); });
+        $('#pblank', p).addEventListener('click', function () { closeSheet(); setupSheet({ mode: 'start' }); });
+        list.addEventListener('click', function (e) {
+          var b = e.target.closest ? e.target.closest('.pl') : null; if (!b) return; var id = b.getAttribute('data-id');
+          if (reorder) { sel = id; refresh(); return; }
+          closeSheet(); previewSheet((S.plans || []).filter(function (q) { return q.id === id; })[0]);
+        });
       });
   }
   function previewSheet(plan) {
