@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 50;
+  var APP_VER = 51;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -1623,29 +1623,61 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     if (withPlan && !Object.keys(S.takes).length) UI.sceneId = withPlan.id;
     render(); window.scrollTo(0, 0);
   }
+  /* Recent projects: the app keeps its own copy of the last 5 saved projects, on this device, inside the app. */
+  function rdb() { return new Promise(function (res, rej) { var q = indexedDB.open('linedscript-recent', 1); q.onupgradeneeded = function () { q.result.createObjectStore('r', { keyPath: 'name' }); }; q.onsuccess = function () { res(q.result); }; q.onerror = function () { rej(q.error); }; }); }
+  function rreq(r) { return new Promise(function (res, rej) { r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; }); }
+  async function recentList() { try { var db = await rdb(), l = await rreq(db.transaction('r').objectStore('r').getAll()); db.close(); return (l || []).sort(function (a, b) { return b.at - a.at; }); } catch (e) { return []; } }
+  async function recentSave(name, text) {
+    try {
+      var db = await rdb(), tx = db.transaction('r', 'readwrite'), st = tx.objectStore('r'); st.put({ name: name, at: Date.now(), text: text });
+      await new Promise(function (res, rej) { tx.oncomplete = res; tx.onerror = function () { rej(tx.error); }; });
+      var l = await recentList(); db.close();
+      if (l.length > 5) { var db2 = await rdb(), tx2 = db2.transaction('r', 'readwrite'); l.slice(5).forEach(function (x) { tx2.objectStore('r').delete(x.name); }); await new Promise(function (res) { tx2.oncomplete = res; tx2.onerror = res; }); db2.close(); }
+      try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+      return true;
+    } catch (e) { return false; }
+  }
+  async function recentSheet() {
+    var l = await recentList();
+    if (!l.length) { var f = $('#restorefile'); f.value = ''; f.click(); return; }
+    openSheet('<h3>Open project</h3><label>Recent projects saved in the app</label><div class="plist">' + l.map(function (x, i) { return '<button type="button" class="pl" data-i="' + i + '"><b>' + esc(x.name) + '</b><span>' + new Date(x.at).toLocaleDateString([], { day: 'numeric', month: 'short' }) + ' ' + new Date(x.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '</span></button>'; }).join('') + '</div>' +
+      '<button type="button" class="btn" id="rfile">Choose a file instead</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      function (p) {
+        $('#rfile', p).addEventListener('click', function () { closeSheet(); var f = $('#restorefile'); f.value = ''; f.click(); });
+        p.querySelectorAll('.pl').forEach(function (b) { b.addEventListener('click', function () {
+          var x = l[Number(b.getAttribute('data-i'))];
+          try { var d = JSON.parse(x.text); if (!d || !d.linedscript || !Array.isArray(d.scenes) || !d.scenes.length) throw new Error('bad'); closeSheet(); restoreSheet(d, x.name); } catch (e) { toast('Could not open that one.'); }
+        }); });
+      });
+  }
   /* Save project: name it, then choose where it goes (a proper Save dialog where the browser has one, otherwise the share sheet). */
   function saveSheet(after) {
     var proj = curProj(); if (!proj) return;
     var canPick = typeof window.showSaveFilePicker === 'function';
     openSheet('<h3>Save project</h3><div><label for="fname">File name</label><input type="text" id="fname" autocomplete="off" autocapitalize="off" maxlength="80"></div>' +
-      '<p class="notice">' + (canPick ? 'You will choose the folder next.' : 'Next you choose where it goes: Files, Drive, WhatsApp and so on.') + '</p>' +
-      '<button type="button" class="btn primary" id="fsave">Save</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      '<p class="notice">' + (canPick ? 'You will choose the folder next.' : 'Next you choose where it goes: Files, Drive, WhatsApp and so on.') + ' A copy is also kept in the app under Recent projects (the last 5).</p>' +
+      '<button type="button" class="btn primary" id="fsave">Save</button><button type="button" class="btn" id="fapp">Save in the app only</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
       function (p) {
         var fn = $('#fname', p); fn.value = proj.name || 'Project';
         async function go() {
           var name = fn.value.replace(/[\\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() || (proj.name || 'Project');
           if (!/\.json$/i.test(name)) name += '.json';
           var pn = name.replace(/\.json$/i, ''); if (pn && pn !== proj.name) { proj.name = pn; saveIndex(); }
-          var ok = false;
+          var ok = false, txt = await projectJson(true), kept = await recentSave(pn || 'Project', txt);
           if (canPick) {
             try {
               var h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'Lined Script project', accept: { 'application/json': ['.json'] } }] });
-              var w = await h.createWritable(); await w.write(await projectJson(true)); await w.close(); ok = true; name = h.name || name;
-            } catch (e) { if (e && e.name === 'AbortError') return; ok = await deliver(await projectJson(true), name, 'application/json'); }
-          } else ok = await deliver(await projectJson(true), name, 'application/json');
+              var w = await h.createWritable(); await w.write(txt); await w.close(); ok = true; name = h.name || name;
+            } catch (e) { if (e && e.name === 'AbortError') { if (kept) { closeSheet(); toast('Saved in the app only'); if (typeof after === 'function') after(); } return; } ok = await deliver(txt, name, 'application/json'); }
+          } else ok = await deliver(txt, name, 'application/json');
           if (ok) { S.lastBackup = new Date().toISOString(); persistLocal(); closeSheet(); toast('Saved ' + name); if (typeof after === 'function') after(); }
         }
         $('#fsave', p).addEventListener('click', go);
+        $('#fapp', p).addEventListener('click', async function () {
+          var nm = fn.value.replace(/[\\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/\.json$/i, '') || (proj.name || 'Project');
+          if (nm !== proj.name) { proj.name = nm; saveIndex(); }
+          if (await recentSave(nm, await projectJson(true))) { closeSheet(); toast('Saved in the app: ' + nm); if (typeof after === 'function') after(); } else toast('Could not save in the app. Use Save instead.');
+        });
         fn.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
         setTimeout(function () { try { fn.focus(); fn.select(); } catch (e) {} }, 100);
       });
@@ -1807,7 +1839,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     addscene: function () { importSheet('add'); },
     backup: function () { saveSheet(); },
     sharescript: async function () { deliver(await projectJson(false), 'script-only-' + slug((curProj() || {}).name) + '-' + stamp() + '.json', 'application/json'); },
-    restore: function () { var f = $('#restorefile'); f.value = ''; f.click(); },
+    restore: function () { recentSheet(); },
     clearall: function () { deleteSheet(); },
     closesheet: function () { closeSheet(); },
     newtake: function () { newTake(); },
