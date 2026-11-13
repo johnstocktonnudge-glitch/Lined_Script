@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 53;
+  var APP_VER = 54;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -1566,7 +1566,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       takesOf(sc.id).forEach(function (t) {
         var st = (tcs[t.id] || {}).start; if (!st) { skipped++; return; }
         var good = t.result === 'circle' || nStars(t) > 0, bad = t.result === 'misfire' || t.result === 'ng';
-        var name = ('Sc' + (sc.number || '') + ' S' + t.setup + '/T' + t.take + (t.desc ? ' ' + t.desc : '') + (t.result === 'misfire' ? ' MISFIRE' : t.result === 'ng' ? ' NG' : t.result === 'circle' ? ' KEEPER' + (t.kname ? ': ' + t.kname : '') : good ? ' GOOD' : '')).replace(/[|\r\n]/g, ' ');
+        var best = [], chg = [], drop = [], nts = [];
+        sc.lines.forEach(function (l) {
+          if (l.type !== 'dialogue') return;
+          var m = (t.marks || {})[l.id] || '', lab = (l.who ? l.who + ': ' : '') + l.text.replace(/^\([^)]*\)\s*/, '').slice(0, 40);
+          if ((t.stars || {})[l.id]) best.push(lab);
+          if (m === 'chg') chg.push(lab);
+          if (m === 'drop') drop.push(lab);
+          if ((t.notes || {})[l.id]) nts.push(lab + ' [' + t.notes[l.id] + ']');
+        });
+        var extra = [t.note || '', best.length ? 'BEST: ' + best.join(' / ') : '', chg.length ? 'CHANGED: ' + chg.join(' / ') : '', drop.length ? 'NOT SAID: ' + drop.join(' / ') : '', nts.length ? 'NOTES: ' + nts.join(' / ') : ''].filter(Boolean).join(' ; ');
+        var name = ('Sc' + (sc.number || '') + ' S' + t.setup + '/T' + t.take + (t.desc ? ' ' + t.desc : '') + (t.result === 'misfire' ? ' MISFIRE' : t.result === 'ng' ? ' NG' : t.result === 'circle' ? ' KEEPER' + (t.kname ? ': ' + t.kname : '') : good ? ' GOOD' : '') + (extra ? ' ; ' + extra : '')).replace(/[|\r\n]/g, ' ');
         n++; var num = ('000' + n).slice(-3);
         out.push(num + '  001      V     C        ' + st + ' ' + addFrame(st) + ' ' + st + ' ' + addFrame(st) + '  ');
         out.push(' |C:' + (bad ? 'ResolveColorRed' : good ? 'ResolveColorGreen' : 'ResolveColorBlue') + ' |M:' + name + ' |D:1', '');
