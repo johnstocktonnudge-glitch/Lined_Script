@@ -122,7 +122,7 @@ body.locked .setrow2 .btn { opacity: .45; }
 .plist { display: grid; gap: 8px; margin: 8px 0; }
 .pl { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; min-height: 56px; padding: 8px 14px; font: inherit; font-size: 17px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; }
 .pl b { text-transform: uppercase; letter-spacing: .04em; } .pl span { color: var(--muted); font-size: 14px; white-space: nowrap; } .pl.used { opacity: .55; }
-.pl.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); } .pl.sel span { color: var(--accent-ink); } .shbtns { display: flex; gap: 6px; } .pl.ro { opacity: .85; } #pmvbar[hidden] { display: none; } #pmvbar .btn:disabled { opacity: .35; } .mv { flex: none; width: 52px; min-height: 56px; font: inherit; font-size: 18px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; } .mv:disabled { opacity: .25; }
+.pl.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); } .pl.sel span { color: var(--accent-ink); } #pmvbar[hidden] { display: none; } #pmvbar .btn:disabled { opacity: .35; } .mv { flex: none; width: 52px; min-height: 56px; font: inherit; font-size: 18px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; } .mv:disabled { opacity: .25; }
 .misfire { width: 100%; margin-top: 8px; min-height: 48px; }
 .qrow { display: flex; gap: 6px; margin-bottom: 8px; }
 .qrow input { flex: 1; min-width: 0; }
@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 45;
+  var APP_VER = 46;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -954,25 +954,13 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     var sc = curScene(); if (!sc || wrapGuard()) return;
     var ps = plansOf(sc); if (!ps.length) { setupSheet({ mode: 'start' }); return; }
     var sel = ro && ro.sel || '';
-    function rows() { return ps.map(function (q, qi) { var st = planStarted(q); return '<button type="button" class="pl' + (st ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + (st ? '✓ ' : '') + 'Setup #' + (qi + 1) + '</span></button>'; }).join(''); }
-    openSheet('<h3>New setup</h3><div class="two"><button type="button" class="btn" id="pview">Script order</button><button type="button" class="btn" id="preorder">Reorder</button></div>' +
+    function rows() { return ps.map(function (q) { var st = planStarted(q); return '<button type="button" class="pl' + (st ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + q.focus.length + ' line' + (q.focus.length === 1 ? '' : 's') + (st ? ' · ✓ started' : '') + '</span></button>'; }).join(''); }
+    openSheet('<div class="shead"><h3>New setup</h3><button type="button" class="btn small" id="preorder">Reorder</button></div>' +
       '<div id="pmvbar" class="two" hidden><button type="button" class="btn primary" id="pup">&#9650; Up</button><button type="button" class="btn primary" id="pdn">&#9660; Down</button></div>' +
       '<label id="plabel">Saved setups for this scene</label><div class="plist" id="plist">' + rows() + '</div>' +
       '<button type="button" class="btn" id="pblank">Blank setup: pick lines now</button><button type="button" class="btn" id="pclose" data-act="closesheet">Cancel</button>',
       function (p) {
         var reorder = false, list = $('#plist', p), bar = $('#pmvbar', p), lab = $('#plabel', p), rb = $('#preorder', p), up = $('#pup', p), dn = $('#pdn', p), pc = $('#pclose', p);
-        var viewing = false, pv = $('#pview', p);
-        function scriptIdx(q) { var m = 1e9; q.focus.forEach(function (id) { for (var k = 0; k < sc.lines.length; k++) if (sc.lines[k].id === id && k < m) m = k; }); return m; }
-        function drawList() {
-          if (!viewing) { list.innerHTML = rows(); refresh(); return; }
-          var ord = ps.map(function (q, i) { return { q: q, i: i + 1, k: scriptIdx(q) }; }).sort(function (x, y) { return x.k - y.k || x.i - y.i; });
-          list.innerHTML = ord.map(function (o, n) { return '<div class="pl ro"><b>' + esc(o.q.name) + '</b><span>' + (n + 1) + '</span></div>'; }).join('');
-        }
-        pv.addEventListener('click', function () {
-          viewing = !viewing; if (viewing && reorder) setMode(false);
-          pv.textContent = viewing ? 'Shooting order' : 'Script order'; pv.classList.toggle('primary', viewing); rb.disabled = viewing;
-          lab.textContent = viewing ? 'Script order (view only). Your shooting order is unchanged.' : 'Saved setups for this scene'; drawList();
-        });
         function btnOf(id) { return list.querySelector('.pl[data-id="' + id + '"]'); }
         function refresh() {
           list.querySelectorAll('.pl').forEach(function (b) { b.classList.toggle('sel', reorder && b.getAttribute('data-id') === sel); });
@@ -997,7 +985,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         dn.addEventListener('click', function () { move(1); });
         $('#pblank', p).addEventListener('click', function () { closeSheet(); setupSheet({ mode: 'start' }); });
         list.addEventListener('click', function (e) {
-          var b = e.target.closest ? e.target.closest('.pl') : null; if (!b || viewing) return; var id = b.getAttribute('data-id');
+          var b = e.target.closest ? e.target.closest('.pl') : null; if (!b) return; var id = b.getAttribute('data-id');
           if (reorder) { sel = id; refresh(); return; }
           closeSheet(); previewSheet((S.plans || []).filter(function (q) { return q.id === id; })[0]);
         });
