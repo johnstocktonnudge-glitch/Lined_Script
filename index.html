@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 51;
+  var APP_VER = 52;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -1656,7 +1656,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     var canPick = typeof window.showSaveFilePicker === 'function';
     openSheet('<h3>Save project</h3><div><label for="fname">File name</label><input type="text" id="fname" autocomplete="off" autocapitalize="off" maxlength="80"></div>' +
       '<p class="notice">' + (canPick ? 'You will choose the folder next.' : 'Next you choose where it goes: Files, Drive, WhatsApp and so on.') + ' A copy is also kept in the app under Recent projects (the last 5).</p>' +
-      '<button type="button" class="btn primary" id="fsave">Save</button><button type="button" class="btn" id="fapp">Save in the app only</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      '<button type="button" class="btn primary" id="fapp">Save in the app only</button><button type="button" class="btn" id="fsave">Save</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
       function (p) {
         var fn = $('#fname', p); fn.value = proj.name || 'Project';
         async function go() {
