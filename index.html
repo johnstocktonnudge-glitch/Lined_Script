@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 44;
+  var APP_VER = 45;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -954,7 +954,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     var sc = curScene(); if (!sc || wrapGuard()) return;
     var ps = plansOf(sc); if (!ps.length) { setupSheet({ mode: 'start' }); return; }
     var sel = ro && ro.sel || '';
-    function rows() { return ps.map(function (q) { var st = planStarted(q); return '<button type="button" class="pl' + (st ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + q.focus.length + ' line' + (q.focus.length === 1 ? '' : 's') + (st ? ' · ✓ started' : '') + '</span></button>'; }).join(''); }
+    function rows() { return ps.map(function (q, qi) { var st = planStarted(q); return '<button type="button" class="pl' + (st ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + (st ? '✓ ' : '') + 'Setup #' + (qi + 1) + '</span></button>'; }).join(''); }
     openSheet('<h3>New setup</h3><div class="two"><button type="button" class="btn" id="pview">Script order</button><button type="button" class="btn" id="preorder">Reorder</button></div>' +
       '<div id="pmvbar" class="two" hidden><button type="button" class="btn primary" id="pup">&#9650; Up</button><button type="button" class="btn primary" id="pdn">&#9660; Down</button></div>' +
       '<label id="plabel">Saved setups for this scene</label><div class="plist" id="plist">' + rows() + '</div>' +
@@ -966,7 +966,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         function drawList() {
           if (!viewing) { list.innerHTML = rows(); refresh(); return; }
           var ord = ps.map(function (q, i) { return { q: q, i: i + 1, k: scriptIdx(q) }; }).sort(function (x, y) { return x.k - y.k || x.i - y.i; });
-          list.innerHTML = ord.map(function (o) { return '<div class="pl ro"><b>' + esc(o.q.name) + '</b><span>shoot #' + o.i + '</span></div>'; }).join('');
+          list.innerHTML = ord.map(function (o, n) { return '<div class="pl ro"><b>' + esc(o.q.name) + '</b><span>' + (n + 1) + '</span></div>'; }).join('');
         }
         pv.addEventListener('click', function () {
           viewing = !viewing; if (viewing && reorder) setMode(false);
