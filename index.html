@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 52;
+  var APP_VER = 53;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -1590,7 +1590,32 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
     toast('Saved ' + filename); return true;
   }
-  async function saveCsv(scenes, name) { await deliver(csvFor(scenes), name, 'text/csv'); }
+  async function saveCsv(scenes, name) { exportSheet('Export CSV', csvFor(scenes), name.replace(/\.csv$/i, '').replace(/-/g, ' '), 'csv', 'text/csv', warnUntyped); }
+  /* Export: same Save flow as Save project (name it, then choose where it goes). */
+  function exportSheet(title, text, base, ext, mime, then) {
+    var canPick = typeof window.showSaveFilePicker === 'function';
+    openSheet('<h3>' + esc(title) + '</h3><div><label for="xname">File name</label><input type="text" id="xname" autocomplete="off" autocapitalize="off" maxlength="80"></div>' +
+      '<p class="notice">' + (canPick ? 'You will choose the folder next.' : 'Next you choose where it goes: Files, Drive, WhatsApp and so on.') + ' The file ends in .' + ext + '.</p>' +
+      '<button type="button" class="btn primary" id="xsave">Save</button><button type="button" class="btn" id="xcopy">Copy as text</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      function (p) {
+        var fn = $('#xname', p); fn.value = base;
+        function nm() { var n = fn.value.replace(/[\\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() || base; return n.replace(new RegExp('\\.' + ext + '$', 'i'), '') + '.' + ext; }
+        async function go() {
+          var name = nm(), ok = false;
+          if (canPick) {
+            try {
+              var h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: ext.toUpperCase() + ' file', accept: (function (o) { o[mime] = ['.' + ext]; return o; })({}) }] });
+              var w = await h.createWritable(); await w.write(text); await w.close(); ok = true; name = h.name || name;
+            } catch (e) { if (e && e.name === 'AbortError') return; ok = await deliver(text, name, mime); }
+          } else ok = await deliver(text, name, mime);
+          if (ok) { closeSheet(); toast('Saved ' + name); if (then) then(); }
+        }
+        $('#xsave', p).addEventListener('click', go);
+        $('#xcopy', p).addEventListener('click', function () { copyText(text, 'Text'); });
+        fn.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+        setTimeout(function () { try { fn.focus(); fn.select(); } catch (e) {} }, 100);
+      });
+  }
   function stamp() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()); }
   async function projectJson(withTakes) {
     var flags = [];
@@ -1865,14 +1890,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     resolvemarkers: async function () {
       var r = markersEdl(sceneList());
       if (!r.n) { toast('No takes have a timecode yet. Add sync flags and type their timecode.'); return; }
-      await deliver(r.text, 'resolve-markers-' + slug((curProj() || {}).name) + '-' + stamp() + '.edl', 'text/plain');
-      if (r.skipped) toast(r.skipped + ' take' + (r.skipped === 1 ? ' has' : 's have') + ' no timecode, left out');
+      exportSheet('Export markers for Resolve', r.text, ((curProj() || {}).name || 'Project') + ' markers', 'edl', 'text/plain', function () { if (r.skipped) setTimeout(function () { toast(r.skipped + ' take' + (r.skipped === 1 ? ' has' : 's have') + ' no timecode, left out'); }, 1800); });
     },
     resolvecsv: async function () {
       var r = resolveCsv(sceneList());
       if (!r.n) { toast('No takes logged yet.'); return; }
-      await deliver(r.text, 'resolve-metadata-' + slug((curProj() || {}).name) + '-' + stamp() + '.csv', 'text/csv'); warnUntyped();
-      if (r.missing) toast(r.missing + ' take' + (r.missing === 1 ? ' has' : 's have') + ' no timecode and no clip name, so Resolve cannot match ' + (r.missing === 1 ? 'it' : 'them') + '.');
+      exportSheet('Export to Resolve (CSV)', r.text, ((curProj() || {}).name || 'Project') + ' Resolve', 'csv', 'text/csv', function () { warnUntyped(); if (r.missing) setTimeout(function () { toast(r.missing + ' take' + (r.missing === 1 ? ' has' : 's have') + ' no timecode and no clip name, so Resolve cannot match ' + (r.missing === 1 ? 'it' : 'them') + '.'); }, 2500); });
     },
     csvall: function () { saveCsv(sceneList(), 'lined-script-all-takes.csv'); warnUntyped(); }
   };
