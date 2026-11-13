@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 47;
+  var APP_VER = 48;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -1459,11 +1459,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         });
         go.addEventListener('click', function () {
           if (replace && oldScenes.length) {
-            guard('Replace the script?', 'You are about to replace the script. Are you sure?', 'The current scenes and every logged take will be erased.', function () {
+            function wipe() {
               Object.keys(S.takes).forEach(function (id) { remove('takes', id); });
               oldScenes.forEach(function (s) { remove('scenes', s.id); });
               run();
-            });
+            }
+            openSheet('<h3>Load the new script?</h3><p class="imp-info">Your current script' + (oldTakes ? ' and its ' + oldTakes + ' logged take' + (oldTakes === 1 ? '' : 's') : '') + ' will be replaced. Save it first?</p>' +
+              '<button type="button" class="btn primary" id="nsave">Save project, then load</button><button type="button" class="btn" id="nskip">Load without saving</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
+              function (q) {
+                $('#nsave', q).addEventListener('click', function () { closeSheet(); saveSheet(wipe); });
+                $('#nskip', q).addEventListener('click', function () { try { snapNow(); } catch (e) {} wipe(); });
+              });
             return;
           }
           run();
@@ -1611,7 +1617,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     render(); window.scrollTo(0, 0);
   }
   /* Save project: name it, then choose where it goes (a proper Save dialog where the browser has one, otherwise the share sheet). */
-  function saveSheet() {
+  function saveSheet(after) {
     var proj = curProj(); if (!proj) return;
     var canPick = typeof window.showSaveFilePicker === 'function';
     openSheet('<h3>Save project</h3><div><label for="fname">File name</label><input type="text" id="fname" autocomplete="off" autocapitalize="off" maxlength="80"></div>' +
@@ -1630,7 +1636,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
               var w = await h.createWritable(); await w.write(await projectJson(true)); await w.close(); ok = true; name = h.name || name;
             } catch (e) { if (e && e.name === 'AbortError') return; ok = await deliver(await projectJson(true), name, 'application/json'); }
           } else ok = await deliver(await projectJson(true), name, 'application/json');
-          if (ok) { S.lastBackup = new Date().toISOString(); persistLocal(); closeSheet(); toast('Saved ' + name); }
+          if (ok) { S.lastBackup = new Date().toISOString(); persistLocal(); closeSheet(); toast('Saved ' + name); if (typeof after === 'function') after(); }
         }
         $('#fsave', p).addEventListener('click', go);
         fn.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
