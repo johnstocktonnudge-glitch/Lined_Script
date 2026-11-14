@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 58;
+  var APP_VER = 59;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -1704,8 +1704,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   }
   async function recentSheet() {
     var l = await recentList();
-    if (!l.length) { var f = $('#restorefile'); f.value = ''; f.click(); return; }
-    openSheet('<h3>Open project</h3><label>Recent projects saved in the app</label><div class="plist">' + l.map(function (x, i) { return '<button type="button" class="pl" data-i="' + i + '"><b>' + esc(x.name) + '</b><span>' + new Date(x.at).toLocaleDateString([], { day: 'numeric', month: 'short' }) + ' ' + new Date(x.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '</span></button>'; }).join('') + '</div>' +
+    openSheet('<h3>Open project</h3><label>' + (l.length ? 'Recent projects saved in the app' : 'No recent projects saved in the app yet') + '</label><div class="plist">' + l.map(function (x, i) { return '<button type="button" class="pl" data-i="' + i + '"><b>' + esc(x.name) + '</b><span>' + new Date(x.at).toLocaleDateString([], { day: 'numeric', month: 'short' }) + ' ' + new Date(x.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '</span></button>'; }).join('') + '</div>' +
       '<button type="button" class="btn" id="rfile">Choose a file instead</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
       function (p) {
         $('#rfile', p).addEventListener('click', function () { closeSheet(); var f = $('#restorefile'); f.value = ''; f.click(); });
@@ -1724,16 +1723,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       '<button type="button" class="btn primary" id="fapp">Save in the app only</button><button type="button" class="btn" id="fsave">Save</button><button type="button" class="btn" data-act="closesheet">Cancel</button>',
       function (p) {
         var fn = $('#fname', p); fn.value = proj.name || 'Project';
+        var pre = null; projectJson(true).then(function (t) { pre = t; }, function () {});
         async function go() {
           var name = fn.value.replace(/[\\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() || (proj.name || 'Project');
           if (!/\.json$/i.test(name)) name += '.json';
           var pn = name.replace(/\.json$/i, ''); if (pn && pn !== proj.name) { proj.name = pn; saveIndex(); }
-          var ok = false, txt = await projectJson(true), kept = await recentSave(pn || 'Project', txt);
+          var ok = false, txt = (pre !== null ? pre : await projectJson(true)), kept = recentSave(pn || 'Project', txt);
           if (canPick) {
             try {
               var h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'Lined Script project', accept: { 'application/json': ['.json'] } }] });
               var w = await h.createWritable(); await w.write(txt); await w.close(); ok = true; name = h.name || name;
-            } catch (e) { if (e && e.name === 'AbortError') { if (kept) { closeSheet(); toast('Saved in the app only'); if (typeof after === 'function') after(); } return; } ok = await deliver(txt, name, 'application/json'); }
+            } catch (e) { if (e && e.name === 'AbortError') { if (await kept) { closeSheet(); toast('Saved in the app only'); if (typeof after === 'function') after(); } return; } ok = await deliver(txt, name, 'application/json'); }
           } else ok = await deliver(txt, name, 'application/json');
           if (ok) { S.lastBackup = new Date().toISOString(); persistLocal(); closeSheet(); toast('Saved ' + name); if (typeof after === 'function') after(); }
         }
