@@ -122,7 +122,7 @@ body.locked .setrow2 .btn { opacity: .45; }
 .plist { display: grid; gap: 8px; margin: 8px 0; }
 .pl { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; min-height: 56px; padding: 8px 14px; font: inherit; font-size: 17px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; }
 .pl b { text-transform: uppercase; letter-spacing: .04em; } .pl span { color: var(--muted); font-size: 14px; white-space: nowrap; } .pl.used { opacity: .55; }
-.pl.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); } .pl.sel span { color: var(--accent-ink); } #pmvbar[hidden] { display: none; } #pmvbar .btn:disabled { opacity: .35; } .mv { flex: none; width: 52px; min-height: 56px; font: inherit; font-size: 18px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; } .mv:disabled { opacity: .25; }
+.plr { display: flex; gap: 8px; align-items: stretch; } .plr .pl { flex: 1; min-width: 0; margin: 0; } .plist .plr input.pn { flex: 0 0 56px; width: 56px; min-width: 56px; max-width: 56px; box-sizing: border-box; background: #000; color: #fff; border: 3px solid #fff; border-radius: 8px; font-family: inherit; font-weight: 800; font-size: 24px; text-align: center; padding: 0; margin: 0; letter-spacing: 0; min-height: 0; } .plist .plr input.pn:focus { outline: 3px solid var(--accent); outline-offset: 2px; } .pl.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); } .pl.sel span { color: var(--accent-ink); } #pmvbar[hidden] { display: none; } #pmvbar .btn:disabled { opacity: .35; } .mv { flex: none; width: 52px; min-height: 56px; font: inherit; font-size: 18px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; } .mv:disabled { opacity: .25; }
 .misfire { width: 100%; margin-top: 8px; min-height: 48px; }
 .qrow { display: flex; gap: 6px; margin-bottom: 8px; }
 .qrow input { flex: 1; min-width: 0; }
@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 56;
+  var APP_VER = 57;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -965,7 +965,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
           function idx(q) { var m = 1e9; q.focus.forEach(function (id) { for (var k = 0; k < sc.lines.length; k++) if (sc.lines[k].id === id && k < m) m = k; }); return m; }
           var o = ps.slice().sort(function (x, y) { return idx(x) - idx(y) || x.seq - y.seq; }), r = {}; o.forEach(function (q, n) { r[q.id] = n + 1; }); return r;
         }
-        function rows() { var rk = scriptRanks(); return ps.map(function (q, qi) { var st = planStarted(q); return '<button type="button" class="pl' + (st ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + (st ? '✓ ' : '') + (qi + 1) + '-' + rk[q.id] + '</span></button>'; }).join(''); }
+        function rows() { var rk = scriptRanks(); return ps.map(function (q) { var st = planStarted(q); return '<div class="plr"><input type="text" class="pn" inputmode="numeric" pattern="[0-9]*" maxlength="2" enterkeyhint="done" autocomplete="off" aria-label="Shoot order number for ' + esc(q.name) + '" data-id="' + esc(q.id) + '" value="' + (q.shoot || '') + '"><button type="button" class="pl' + (st ? ' used' : '') + '" data-id="' + esc(q.id) + '"><b>' + esc(q.name) + '</b><span>' + (st ? '✓ ' : '') + rk[q.id] + '</span></button></div>'; }).join(''); }
     openSheet('<div class="shead"><h3>New setup</h3><button type="button" class="btn small" id="preorder">Reorder</button></div>' +
       '<div id="pmvbar" class="two" hidden><button type="button" class="btn primary" id="pup">&#9650; Up</button><button type="button" class="btn primary" id="pdn">&#9660; Down</button></div>' +
       '<label id="plabel">Saved setups for this scene</label><div class="plist" id="plist">' + rows() + '</div>' +
@@ -978,7 +978,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
           var i = ps.map(function (q) { return q.id; }).indexOf(sel);
           up.disabled = i <= 0; dn.disabled = i < 0 || i >= ps.length - 1;
         }
-        function renum() { var rk = scriptRanks(); ps.forEach(function (q, qi) { var b = btnOf(q.id), sp = b && b.querySelector('span'); if (sp) sp.textContent = (planStarted(q) ? '✓ ' : '') + (qi + 1) + '-' + rk[q.id]; }); }
+        function renum() {}
         function setMode(on) {
           reorder = on; bar.hidden = !on; rb.textContent = on ? 'Done' : 'Reorder'; rb.classList.toggle('primary', on);
           lab.textContent = on ? 'Tap a setup, then use Up and Down' : 'Saved setups for this scene'; refresh();
@@ -988,7 +988,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
           if (i < 0 || j < 0 || j >= ps.length) return;
           var a = S.plans.indexOf(ps[i]), c = S.plans.indexOf(ps[j]); S.plans[a] = ps[j]; S.plans[c] = ps[i];
           var t = ps[i]; ps[i] = ps[j]; ps[j] = t;
-          var el = btnOf(sel), other = btnOf(ps[i].id);
+          var el = btnOf(sel).parentNode, other = btnOf(ps[i].id).parentNode;
           if (dd < 0) list.insertBefore(el, other); else list.insertBefore(other, el);
           persistLocal(); renum(); refresh(); el.scrollIntoView({ block: 'nearest' });
         }
@@ -996,6 +996,15 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         up.addEventListener('click', function () { move(-1); });
         dn.addEventListener('click', function () { move(1); });
         $('#pblank', p).addEventListener('click', function () { closeSheet(); setupSheet({ mode: 'start' }); });
+        list.addEventListener('focusin', function (e) { if (e.target.classList && e.target.classList.contains('pn')) { try { e.target.select(); } catch (x) {} } });
+        list.addEventListener('change', function (e) {
+          var inp = e.target; if (!inp.classList || !inp.classList.contains('pn')) return;
+          var q = ps.filter(function (z) { return z.id === inp.getAttribute('data-id'); })[0]; if (!q) return;
+          var v = inp.value.replace(/\D/g, '').slice(0, 2), n = v ? parseInt(v, 10) : 0;
+          if (n) { var clash = ps.filter(function (z) { return z !== q && z.shoot === n; })[0]; if (clash) { inp.value = q.shoot || ''; toast('Shoot no. ' + n + ' is already used by ' + clash.name); return; } }
+          if (n) q.shoot = n; else delete q.shoot; inp.value = n || ''; persistLocal();
+        });
+        list.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('pn')) { e.preventDefault(); e.target.blur(); } });
         list.addEventListener('click', function (e) {
           var b = e.target.closest ? e.target.closest('.pl') : null; if (!b) return; var id = b.getAttribute('data-id');
           if (reorder) { sel = id; refresh(); return; }
