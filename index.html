@@ -122,7 +122,7 @@ body.locked .setrow2 .btn { opacity: .45; }
 .plist { display: grid; gap: 8px; margin: 8px 0; }
 .pl { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; min-height: 56px; padding: 8px 14px; font: inherit; font-size: 17px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; }
 .pl b { text-transform: uppercase; letter-spacing: .04em; } .pl span { color: var(--muted); font-size: 14px; white-space: nowrap; } .pl.used { opacity: .55; }
-.plr { display: flex; gap: 8px; align-items: stretch; } .plr .pl { flex: 1; min-width: 0; margin: 0; } .plist .plr input.pn { flex: 0 0 56px; width: 56px; min-width: 56px; max-width: 56px; box-sizing: border-box; background: #000; color: #fff; border: 3px solid #fff; border-radius: 8px; font-family: inherit; font-weight: 800; font-size: 24px; text-align: center; padding: 0; margin: 0; letter-spacing: 0; min-height: 0; } .plist .plr input.pn:focus { outline: 3px solid var(--accent); outline-offset: 2px; } .pl.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); } .pl.sel span { color: var(--accent-ink); } #pmvbar[hidden] { display: none; } #pmvbar .btn:disabled { opacity: .35; } .mv { flex: none; width: 52px; min-height: 56px; font: inherit; font-size: 18px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; } .mv:disabled { opacity: .25; }
+.plr { display: flex; gap: 8px; align-items: stretch; } .plr .pl { flex: 1; min-width: 0; margin: 0; } .plist .plr input.pn { flex: 0 0 56px; width: 56px; min-width: 56px; max-width: 56px; box-sizing: border-box; background: #000; color: #fff; border: 3px solid #fff; border-radius: 8px; font-family: inherit; font-weight: 800; font-size: 24px; text-align: center; padding: 0; margin: 0; letter-spacing: 0; min-height: 0; } .plist .plr input.pn:focus { outline: 3px solid var(--accent); outline-offset: 2px; } .pl.dsel { border-color: var(--drop); background: #3a1414; } .pl.dsel b::before { content: '\2715  '; color: var(--drop); } #pdbar[hidden] { display: none; } #pdbar .btn:disabled { opacity: .35; } .pl.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); } .pl.sel span { color: var(--accent-ink); } #pmvbar[hidden] { display: none; } #pmvbar .btn:disabled { opacity: .35; } .mv { flex: none; width: 52px; min-height: 56px; font: inherit; font-size: 18px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; } .mv:disabled { opacity: .25; }
 .misfire { width: 100%; margin-top: 8px; min-height: 48px; }
 .qrow { display: flex; gap: 6px; margin-bottom: 8px; }
 .qrow input { flex: 1; min-width: 0; }
@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 57;
+  var APP_VER = 58;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -969,9 +969,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     openSheet('<div class="shead"><h3>New setup</h3><button type="button" class="btn small" id="preorder">Reorder</button></div>' +
       '<div id="pmvbar" class="two" hidden><button type="button" class="btn primary" id="pup">&#9650; Up</button><button type="button" class="btn primary" id="pdn">&#9660; Down</button></div>' +
       '<label id="plabel">Saved setups for this scene</label><div class="plist" id="plist">' + rows() + '</div>' +
-      '<button type="button" class="btn" id="pblank">Blank setup: pick lines now</button><button type="button" class="btn" id="pclose" data-act="closesheet">Cancel</button>',
+      '<div id="pdbar" class="two" hidden><button type="button" class="btn" id="pdall">Select all</button><button type="button" class="btn danger" id="pdgo">Delete 0</button></div>' +
+      '<button type="button" class="btn" id="pblank">Blank setup: pick lines now</button><button type="button" class="btn" id="pdelm">Delete setups</button><button type="button" class="btn" id="pclose" data-act="closesheet">Cancel</button>',
       function (p) {
-        var reorder = false, list = $('#plist', p), bar = $('#pmvbar', p), lab = $('#plabel', p), rb = $('#preorder', p), up = $('#pup', p), dn = $('#pdn', p), pc = $('#pclose', p);
+        var reorder = false, dmode = false, dsel = {}, pdbar = $('#pdbar', p), pdall = $('#pdall', p), pdgo = $('#pdgo', p), pdelm = $('#pdelm', p), list = $('#plist', p), bar = $('#pmvbar', p), lab = $('#plabel', p), rb = $('#preorder', p), up = $('#pup', p), dn = $('#pdn', p), pc = $('#pclose', p);
         function btnOf(id) { return list.querySelector('.pl[data-id="' + id + '"]'); }
         function refresh() {
           list.querySelectorAll('.pl').forEach(function (b) { b.classList.toggle('sel', reorder && b.getAttribute('data-id') === sel); });
@@ -979,6 +980,24 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
           up.disabled = i <= 0; dn.disabled = i < 0 || i >= ps.length - 1;
         }
         function renum() {}
+        function dcount() { return Object.keys(dsel).length; }
+        function dRefresh() {
+          list.querySelectorAll('.pl').forEach(function (b) { b.classList.toggle('dsel', dmode && !!dsel[b.getAttribute('data-id')]); });
+          pdgo.textContent = 'Delete ' + dcount(); pdgo.disabled = !dcount(); pdall.textContent = dcount() === ps.length ? 'Select none' : 'Select all';
+        }
+        function setDel(on) {
+          dmode = on; dsel = {}; pdbar.hidden = !on; pdelm.textContent = on ? 'Done deleting' : 'Delete setups'; rb.disabled = on; if (on && reorder) setMode(false);
+          lab.textContent = on ? 'Tap the setups you want to delete' : 'Saved setups for this scene'; dRefresh();
+        }
+        pdelm.addEventListener('click', function () { setDel(!dmode); });
+        pdall.addEventListener('click', function () { if (dcount() === ps.length) dsel = {}; else ps.forEach(function (q) { dsel[q.id] = 1; }); dRefresh(); });
+        pdgo.addEventListener('click', function () {
+          var n = dcount(); if (!n) return;
+          guard('Delete ' + n + ' saved setup' + (n === 1 ? '' : 's') + '?', 'Delete ' + (n === ps.length ? 'ALL ' : '') + n + ' saved setup' + (n === 1 ? '' : 's') + ' from this scene?', 'Takes already logged are not affected.', function () {
+            S.plans = (S.plans || []).filter(function (q) { return !dsel[q.id]; }); persistLocal(); toast(n + ' setup' + (n === 1 ? '' : 's') + ' deleted');
+            if (plansOf(sc).length) pickSheet(); else closeSheet();
+          });
+        });
         function setMode(on) {
           reorder = on; bar.hidden = !on; rb.textContent = on ? 'Done' : 'Reorder'; rb.classList.toggle('primary', on);
           lab.textContent = on ? 'Tap a setup, then use Up and Down' : 'Saved setups for this scene'; refresh();
@@ -1007,6 +1026,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         list.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('pn')) { e.preventDefault(); e.target.blur(); } });
         list.addEventListener('click', function (e) {
           var b = e.target.closest ? e.target.closest('.pl') : null; if (!b) return; var id = b.getAttribute('data-id');
+          if (dmode) { if (dsel[id]) delete dsel[id]; else dsel[id] = 1; dRefresh(); return; }
           if (reorder) { sel = id; refresh(); return; }
           closeSheet(); previewSheet((S.plans || []).filter(function (q) { return q.id === id; })[0]);
         });
