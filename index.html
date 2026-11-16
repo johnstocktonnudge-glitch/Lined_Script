@@ -138,7 +138,8 @@ body.locked .setrow2 .btn { opacity: .45; }
 .tcin { font-family: var(--script); font-size: 30px; letter-spacing: .08em; text-align: center; width: 100%; min-height: 56px; border: 2px solid var(--line); border-radius: 6px; background: var(--raised); color: var(--ink); }
 .tcin.bad { border-color: var(--drop); }
 #cam { position: fixed; inset: 0; z-index: 60; background: #000; display: flex; flex-direction: column; color: #fff; }
-#cam video { flex: 1 1 auto; min-height: 0; width: 100%; object-fit: cover; background: #000; }
+#cam video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
+#cam .cbar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; background: rgba(0,0,0,.45) !important; }
 #cam .cbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); background: #000; }
 #cam .shutter { width: 76px; height: 76px; border-radius: 50%; border: 5px solid #fff; background: #d4423a; }
 #cam .ctitle { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); left: 0; right: 0; text-align: center; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; text-shadow: 0 1px 4px #000; }
@@ -323,7 +324,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 59;
+  var APP_VER = 60;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -1168,8 +1169,19 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       stopCam(); makeFlag(kind, at, data);
     });
     try {
-      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+      try { camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false }); }
+      catch (e1) { camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); }
+      v.muted = true; v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
       v.srcObject = camStream;
+      var pl = v.play(); if (pl && pl.catch) pl.catch(function () {});
+      setTimeout(function () {
+        if (!document.body.contains(c) || v.videoWidth) return;
+        try { v.play(); } catch (e2) {}
+        setTimeout(function () {
+          if (!document.body.contains(c) || v.videoWidth || c.querySelector('.cmsg')) return;
+          var m2 = document.createElement('div'); m2.className = 'cmsg'; m2.innerHTML = '<p>No picture yet. Close other apps or tabs using the camera, then try again, or tap <b>Time only</b>.</p>'; c.appendChild(m2);
+        }, 1500);
+      }, 700);
     } catch (e) {
       var m = document.createElement('div'); m.className = 'cmsg';
       m.innerHTML = '<p>The camera could not start. Allow camera access for this app, or tap <b>Time only</b> to log the flag without a photo.</p>';
