@@ -102,7 +102,11 @@ body.locked .setrow2 .btn { opacity: .45; }
 .bd { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-weight: 700; font-size: 14px; letter-spacing: .05em; }
 .b-ok { color: var(--ok); } .b-chg { color: var(--chg); } .b-drop { color: var(--drop); } .b-star { color: var(--accent); }
 
-.row.off { opacity: .42; background: var(--surface); border-left-color: var(--line); pointer-events: none; }
+.row.off { opacity: .55; background: var(--surface); border-left-color: var(--line); }
+.row.off .mark { pointer-events: none; }
+.adl { display: flex; gap: 8px; align-items: stretch; margin: 6px 0; }
+.adl .lbody { flex: 1; text-align: left; background: var(--surface); border: 2px solid var(--accent); border-radius: 10px; padding: 10px 12px; color: inherit; font: inherit; }
+.adh { margin: 16px 0 4px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 13px; color: var(--muted); }
 .row.off .txt { color: var(--muted); }
 .fcount { font-weight: 700; font-size: 16px; padding: 4px 0 6px; letter-spacing: .04em; } .fcount.done { color: var(--ok); }
 .seg2 { display: flex; gap: 6px; margin: 8px 0; } .seg2 button { flex: 1; min-height: 46px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); color: var(--ink); font: inherit; font-weight: 600; }
@@ -143,6 +147,8 @@ body.locked .setrow2 .btn { opacity: .45; }
 #cam .cbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); background: #000; }
 #cam .shutter { width: 76px; height: 76px; border-radius: 50%; border: 5px solid #fff; background: #d4423a; }
 #cam .ctitle { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); left: 0; right: 0; text-align: center; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; text-shadow: 0 1px 4px #000; }
+#cam .camalt { position: absolute; top: calc(8px + env(safe-area-inset-top, 0px)); right: 10px; z-index: 3; }
+#cam .cdiag { position: absolute; left: 10px; bottom: 120px; font-size: 11px; opacity: .7; z-index: 3; }
 #cam .cmsg { position: absolute; left: 16px; right: 16px; top: 38%; text-align: center; }
 /* High contrast (default on): pure black, white text, heavy borders, for dark sets */
 :root.hc { --bg: #000; --surface: #000; --raised: #14181d; --ink: #fff; --muted: #e3e8ed; --line: #8995a1;
@@ -324,7 +330,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   var TAKE_CHIPS = ['Good performance', 'Plane overhead', 'Boom in shot', 'Focus soft', 'Light changed', 'Continuity issue', 'Camera issue', 'Sound issue'];
 
   /* ---------- per-phone convenience: last scene, last take, filters ---------- */
-  var APP_VER = 60;
+  var APP_VER = 61;
   var HC = true;
   try { HC = localStorage.getItem('linedscript.hc') !== '0'; } catch (e) {}
   function applyHC() { document.documentElement.classList.toggle('hc', HC); }
@@ -604,11 +610,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   function toggleStar(t, id) {
     t.stars = t.stars || {};
     if (t.stars[id]) delete t.stars[id];
-    else { t.stars[id] = true; var m = (t.marks || {})[id] || ''; if (!m || m === 'drop') { t.marks = t.marks || {}; t.marks[id] = 'ok'; } }
+    else { ensureExtra(t, id); t.stars[id] = true; var m = (t.marks || {})[id] || ''; if (!m || m === 'drop') { t.marks = t.marks || {}; t.marks[id] = 'ok'; } }
     save('takes', t);
   }
   function rowHtml(l, t) {
-    if (!inFocus(t, l.id)) return '<div class="row off ' + (l.type === 'dialogue' ? 'dlg' : 'act') + '" data-id="' + esc(l.id) + '"><span class="mark"></span><span class="lbody">' + (l.type === 'dialogue' ? '<span class="cue">' + esc(l.who) + '</span>' : '') + '<span class="txt">' + esc(l.text) + '</span></span>' + (l.type === 'dialogue' ? '<span></span>' : '') + '</div>';
+    if (!inFocus(t, l.id)) return '<div class="row off ' + (l.type === 'dialogue' ? 'dlg' : 'act') + '" data-id="' + esc(l.id) + '"><span class="mark"></span><button type="button" class="lbody" data-act="open" aria-label="Add line ' + esc(l.id) + ' to this take">' + (l.type === 'dialogue' ? '<span class="cue">' + esc(l.who) + '</span>' : '') + '<span class="txt">' + esc(l.text) + '</span></button>' + (l.type === 'dialogue' ? '<span></span>' : '') + '</div>';
     var st = (t.marks || {})[l.id] || '', note = (t.notes || {})[l.id] || '';
     return '<div class="row ' + (l.type === 'dialogue' ? 'dlg' : 'act') + ' st-' + (st || (l.type === 'dialogue' ? 'todo' : 'none')) + '" data-id="' + esc(l.id) + '">' +
       '<button type="button" class="mark" data-act="cycle" aria-label="Line ' + esc(l.id) + ': ' + (st ? WORD[st] : (l.type === 'dialogue' ? 'still to say' : 'not logged')) + '. Tap to change.">' + ICON[st] + '</button>' +
@@ -639,6 +645,32 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     return '<div class="meter" aria-hidden="true"><i class="m-ok" style="width:' + pct(tot.ok) + '"></i><i class="m-chg" style="width:' + pct(tot.chg) + '"></i><i class="m-drop" style="width:' + pct(tot.drop) + '"></i></div>' +
       '<div class="counts"><b>' + tot.ok + '</b> said · <b>' + tot.chg + '</b> changed · <b>' + tot.drop + '</b> not said · <b class="togo">' + (tot.n - tot.ok) + '</b> to go' + (tot.star ? ' · <b class="best">★ ' + tot.star + '</b> best' : '') + '</div>';
   }
+  function adlibsHtml(t) {
+    var a = t.adlibs || [];
+    return '<div class="adh">Ad-libs and extra lines</div>' + (a.length ? a.map(function (x) { return '<div class="adl"><button type="button" class="lbody" data-act="editadlib" data-id="' + esc(x.id) + '"><span class="cue">' + esc(x.who || 'AD-LIB') + '</span> <span class="txt">' + esc(x.text) + '</span></button></div>'; }).join('') : '<p class="notice">None yet.</p>') +
+      '<button type="button" class="btn" data-act="adlib">Add ad-lib or unscripted line</button>';
+  }
+  function adlibSheet(aid) {
+    var sc = curScene(), t = curTake(); if (!sc || !t) return;
+    var a = aid ? (t.adlibs || []).filter(function (x) { return x.id === aid; })[0] : null, who = {};
+    sc.lines.forEach(function (l) { if (l.type === 'dialogue' && l.who) who[l.who] = 1; });
+    openSheet('<h3>' + (a ? 'Edit ad-lib' : 'Ad-lib / unscripted line') + '</h3><p class="notice">Said on ' + esc(takeName(t)) + ' but not in the script.</p>' +
+      '<div><label for="alwho">Who said it</label><input type="text" id="alwho" autocomplete="off" autocapitalize="characters" maxlength="40" placeholder="Character"><div class="qchips" id="alq">' + Object.keys(who).map(function (w) { return '<button type="button" data-w="' + esc(w) + '">' + esc(w) + '</button>'; }).join('') + '</div></div>' +
+      '<div><label for="altxt">What was said</label><textarea id="altxt" placeholder="The words, or a short description"></textarea></div>' +
+      '<button type="button" class="btn primary" id="alsave">' + (a ? 'Save' : 'Add to this take') + '</button>' + (a ? '<button type="button" class="btn danger" id="aldel">Remove this ad-lib</button>' : '') + '<button type="button" class="btn" data-act="closesheet">Cancel</button>',
+      function (p) {
+        var iw = $('#alwho', p), it = $('#altxt', p); if (a) { iw.value = a.who || ''; it.value = a.text || ''; }
+        p.querySelectorAll('#alq [data-w]').forEach(function (b) { b.addEventListener('click', function () { iw.value = b.getAttribute('data-w'); it.focus(); }); });
+        $('#alsave', p).addEventListener('click', function () {
+          var tx = it.value.trim(); if (!tx) { toast('Type what was said'); return; }
+          t.adlibs = t.adlibs || [];
+          if (a) { a.who = iw.value.trim().toUpperCase(); a.text = tx; } else t.adlibs.push({ id: 'a' + Date.now().toString(36), who: iw.value.trim().toUpperCase(), text: tx });
+          save('takes', t); closeSheet(); toast('Ad-lib saved');
+        });
+        var dl = $('#aldel', p); if (dl) dl.addEventListener('click', function () { t.adlibs = t.adlibs.filter(function (x) { return x.id !== aid; }); save('takes', t); closeSheet(); toast('Removed'); });
+      });
+  }
+  function adlTxt(t) { var a = t.adlibs || []; return a.length ? 'AD-LIB: ' + a.map(function (x) { return (x.who ? x.who + ': ' : '') + x.text; }).join(' / ') : ''; }
   function sumHtml(sc, t) {
     var f = focusOf(t), fl = f ? '<div class="fcount' + (focusLeft(t) ? '' : ' done') + '">Focus: <b>' + (f.length - focusLeft(t)) + ' of ' + f.length + '</b> said' + (focusLeft(t) ? '' : ' · ready for Keeper') + '</div>' : '';
     return fl + coverBar(sceneCover(sc).tot) +
@@ -698,7 +730,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       '</div><div class="setrow"><button type="button" class="btn primary" data-act="newsetup">New setup</button><button type="button" class="btn primary" data-act="saveplan">Save setup</button><button type="button" class="btn primary" data-act="newtake">New take</button></div>' + (t ? '<div class="setrow2"><button type="button" class="btn" data-act="misfire">Misfire · next take</button><button type="button" class="btn keeper' + (t.result === 'circle' ? ' on' : '') + '" data-act="keeper">' + (t.result === 'circle' ? 'Keeper ✓' : 'Keeper') + '</button></div>' : '') + '</div>';
     var ex = sc.example ? '<p class="notice">Example scene. Load your own script on the Script tab, then delete this one.</p>' : '';
     if (!t) return head + ex + '<div class="empty"><h2>Scene ' + esc(sc.number || '') + '</h2><p>Press New take when the camera rolls, then tap each line as it is said.</p></div>';
-    return head + ex + '<div class="sum" id="sum">' + sumHtml(sc, t) + '</div><div id="lines">' + vis(sc).map(function (l) { return rowHtml(l, t); }).join('') + '</div>';
+    return head + ex + '<div class="sum" id="sum">' + sumHtml(sc, t) + '</div><div id="lines">' + vis(sc).map(function (l) { return rowHtml(l, t); }).join('') + '</div>' + adlibsHtml(t);
   }
 
   function logScreen() {
@@ -826,14 +858,15 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   /* Focus: the lines a setup is after. Shared by every take of that setup, empty for the next setup. */
   function fkey(t) { return t.sceneId + '|' + t.setup; }
   function focusOf(t) { var f = t && S.focus && S.focus[fkey(t)]; return f && f.length ? f : null; }
-  function inFocus(t, id) { var f = focusOf(t); return !f || f.indexOf(id) >= 0; }
+  function inFocus(t, id) { var f = focusOf(t); return !f || f.indexOf(id) >= 0 || !!(t.extra && t.extra.indexOf(id) >= 0); }
+  function ensureExtra(t, id) { if (!inFocus(t, id)) { t.extra = t.extra || []; t.extra.push(id); } }
   function focusLeft(t) { var f = focusOf(t); if (!f) return 0; return f.filter(function (id) { return (t.marks || {})[id] !== 'ok'; }).length; }
   function keeperOk(t) {
     var n = focusLeft(t); if (!n) return true;
     toast('Not a keeper yet: ' + n + ' focus line' + (n === 1 ? '' : 's') + ' still to say in this take. Use Misfire.'); return false;
   }
   function recheckKeeper(t) { if (t.result === 'circle' && focusLeft(t)) { t.result = ''; save('takes', t); toast('Keeper removed: a focus line is no longer said'); } }
-  function setMark(t, id, st) { t.marks = t.marks || {}; if (st) t.marks[id] = st; else delete t.marks[id]; save('takes', t); recheckKeeper(t); }
+  function setMark(t, id, st) { t.marks = t.marks || {}; if (st) ensureExtra(t, id); if (st) t.marks[id] = st; else delete t.marks[id]; save('takes', t); recheckKeeper(t); }
   var SHOTS = ['CU', 'MID', 'LONG', 'WIDE', 'ESTABLISHING'], RIGS = ['TRIPOD', 'BAG', 'HAND HELD', 'DRONE'];
   function shotRig(t) { return [t.shot, t.rig].filter(Boolean).join(' · '); }
   function lockKey(t) { return t.sceneId + '|' + t.setup; }
@@ -1158,6 +1191,21 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       '<div class="cbar"><button type="button" class="btn" id="camx">Cancel</button><button type="button" class="shutter" id="cams" aria-label="Take photo"></button><button type="button" class="btn" id="camt">Time only</button></div>';
     document.body.appendChild(c);
     var v = $('#camv', c);
+    var alt = document.createElement('button'); alt.type = 'button'; alt.className = 'btn small camalt'; alt.textContent = 'Use iPad camera app'; c.appendChild(alt);
+    var fi = document.createElement('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.setAttribute('capture', 'environment'); fi.style.display = 'none'; c.appendChild(fi);
+    alt.addEventListener('click', function () { fi.value = ''; fi.click(); });
+    fi.addEventListener('change', function () {
+      var f = fi.files && fi.files[0]; if (!f) return;
+      var at = (f.lastModified && Math.abs(Date.now() - f.lastModified) < 300000) ? f.lastModified : Date.now();
+      var url = URL.createObjectURL(f), im = new Image();
+      im.onload = function () {
+        var data = null;
+        try { var k = Math.min(1, 1400 / Math.max(im.naturalWidth, im.naturalHeight)), cv = document.createElement('canvas'); cv.width = Math.round(im.naturalWidth * k); cv.height = Math.round(im.naturalHeight * k); cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height); data = cv.toDataURL('image/jpeg', 0.85); } catch (e) {}
+        URL.revokeObjectURL(url); stopCam(); makeFlag(kind, at, data);
+      };
+      im.onerror = function () { URL.revokeObjectURL(url); stopCam(); makeFlag(kind, at, null); };
+      im.src = url;
+    });
     $('#camx', c).addEventListener('click', stopCam);
     $('#camt', c).addEventListener('click', function () { var at = Date.now(); stopCam(); makeFlag(kind, at, null); });
     $('#cams', c).addEventListener('click', function () {
@@ -1174,6 +1222,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       v.muted = true; v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
       v.srcObject = camStream;
       var pl = v.play(); if (pl && pl.catch) pl.catch(function () {});
+      setTimeout(function () { if (!document.body.contains(c)) return;
+        var dg = document.createElement('div'); dg.className = 'cdiag'; c.appendChild(dg);
+        var tk = camStream && camStream.getVideoTracks()[0];
+        dg.textContent = 'Ver ' + APP_VER + ' · video ' + v.videoWidth + 'x' + v.videoHeight + ' · ' + (tk ? tk.readyState + (tk.muted ? ' muted' : '') : 'no track');
+      }, 1500);
       setTimeout(function () {
         if (!document.body.contains(c) || v.videoWidth) return;
         try { v.play(); } catch (e2) {}
@@ -1555,6 +1608,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
         var sr = (t.stars || {})[l.id];
         if (m === 'chg' || m === 'drop' || n || sr) out.push('  [' + statusWord(m) + (sr ? ', BEST' : '') + '] ' + (l.type === 'dialogue' ? l.who + ': ' : '') + l.text + (n ? '  -- ' + n : ''));
       });
+      (t.adlibs || []).forEach(function (x) { out.push('  [AD-LIB] ' + (x.who ? x.who + ': ' : '') + x.text); });
       if (t.note) out.push('  Take note: ' + t.note);
       out.push('');
     });
@@ -1590,7 +1644,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
           if ((t.notes || {})[l.id]) notes.push(lab + ' [' + t.notes[l.id] + ']');
         });
         var good = t.result !== 'misfire' && (t.result === 'circle' || best.length > 0);
-        var parts = [t.desc || '', shotRig(t), (tcs[t.id] || {}).start ? 'TC ' + tcs[t.id].start : '', t.result === 'ng' ? 'NG' : t.result === 'misfire' ? 'MISFIRE' : t.result === 'circle' ? 'KEEPER' + (t.kname ? ': ' + t.kname : '') : '', t.note || '', best.length ? 'BEST: ' + best.join(' / ') : '', chg.length ? 'CHANGED: ' + chg.join(' / ') : '', drop.length ? 'NOT SAID: ' + drop.join(' / ') : '', notes.length ? 'NOTES: ' + notes.join(' / ') : ''].filter(Boolean);
+        var parts = [t.desc || '', shotRig(t), (tcs[t.id] || {}).start ? 'TC ' + tcs[t.id].start : '', t.result === 'ng' ? 'NG' : t.result === 'misfire' ? 'MISFIRE' : t.result === 'circle' ? 'KEEPER' + (t.kname ? ': ' + t.kname : '') : '', t.note || '', best.length ? 'BEST: ' + best.join(' / ') : '', chg.length ? 'CHANGED: ' + chg.join(' / ') : '', drop.length ? 'NOT SAID: ' + drop.join(' / ') : '', adlTxt(t), notes.length ? 'NOTES: ' + notes.join(' / ') : ''].filter(Boolean);
         rows.push([t.clip || '', sc.number, t.setup, t.take, good ? 'true' : 'false', parts.join(' | '), (tcs[t.id] || {}).start || '', (tcs[t.id] || {}).next || '', sessAt(Date.parse(t.createdAt)), t.desc || '']);
       });
     });
@@ -1616,7 +1670,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
           if (m === 'drop') drop.push(lab);
           if ((t.notes || {})[l.id]) nts.push(lab + ' [' + t.notes[l.id] + ']');
         });
-        var extra = [t.note || '', best.length ? 'BEST: ' + best.join(' / ') : '', chg.length ? 'CHANGED: ' + chg.join(' / ') : '', drop.length ? 'NOT SAID: ' + drop.join(' / ') : '', nts.length ? 'NOTES: ' + nts.join(' / ') : ''].filter(Boolean).join(' ; ');
+        var extra = [t.note || '', best.length ? 'BEST: ' + best.join(' / ') : '', chg.length ? 'CHANGED: ' + chg.join(' / ') : '', drop.length ? 'NOT SAID: ' + drop.join(' / ') : '', adlTxt(t), nts.length ? 'NOTES: ' + nts.join(' / ') : ''].filter(Boolean).join(' ; ');
         var fo = (S.focus || {})[sc.id + '|' + t.setup], dl = sc.lines.filter(function (l) { return l.type === 'dialogue' && (!fo || fo.indexOf(l.id) >= 0); }), sd = dl.filter(function (l) { return ((t.marks || {})[l.id] || '') === 'ok'; }).length;
         var name = ('S' + t.setup + '/T' + t.take + (t.desc ? ' ' + t.desc : '') + (t.result === 'misfire' ? ' MISFIRE' : t.result === 'ng' ? ' NG' : t.result === 'circle' ? ' KEEPER' + (t.kname ? ': ' + t.kname : '') : good ? ' GOOD' : '') + ' ; Sc' + (sc.number || '') + ' ' + (sc.name || '') + ' ; ' + ((curProj() || {}).name || '') + (dl.length ? ' ; SAID ' + sd + '/' + dl.length : '') + (extra ? ' ; ' + extra : '')).replace(/[|\r\n]/g, ' ');
         n++; var num = ('000' + n).slice(-3);
@@ -1818,8 +1872,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   }
 
   /* ---------- lock ---------- */
-  var TAKELOCK = { keeper: 1, misfire: 1, takesheet: 1, cycle: 1, open: 1, star: 1, fill: 1, clear: 1 };
-  var BLOCKED = { keeper: 1, newsetup: 1, misfire: 1, flagstart: 1, flagsync: 1, flagstop: 1, import: 1, addscene: 1, clearall: 1, newtake: 1, takesheet: 1, cycle: 1, star: 1, fill: 1, clear: 1, editscene: 1 };
+  var TAKELOCK = { keeper: 1, misfire: 1, takesheet: 1, cycle: 1, open: 1, star: 1, fill: 1, clear: 1, adlib: 1, editadlib: 1 };
+  var BLOCKED = { keeper: 1, newsetup: 1, misfire: 1, flagstart: 1, flagsync: 1, flagstop: 1, import: 1, addscene: 1, clearall: 1, newtake: 1, takesheet: 1, cycle: 1, star: 1, fill: 1, clear: 1, editscene: 1, adlib: 1, editadlib: 1 };
   /* Delete code. Not secret, just a few deliberate steps. It can only be changed here in the file (by Claude), never inside the app. */
   var DELETE_CODE = '1234';
   function deleteAll() {
@@ -1924,6 +1978,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     prevtake: function () { moveTake(-1); },
     nexttake: function () { moveTake(1); },
     cycle: function (el) { var t = curTake(); if (!t) return; var id = el.closest('.row').getAttribute('data-id'); var was = t.result; setMark(t, id, NEXT[(t.marks || {})[id] || '']); if (was !== t.result) render(); else repaintRow(id); },
+    adlib: function () { adlibSheet(''); },
+    editadlib: function (el) { adlibSheet(el.getAttribute('data-id')); },
     open: function (el) { lineSheet(el.closest('.row').getAttribute('data-id')); },
     star: function (el) { var t = curTake(); if (!t) return; var id = el.closest('.row').getAttribute('data-id'); toggleStar(t, id); repaintRow(id); },
     fill: function () { var sc = curScene(), t = curTake(); if (!t) return; var n = 0; vis(sc).forEach(function (l) { if ((l.type === 'dialogue' || focusOf(t)) && inFocus(t, l.id) && !(t.marks || {})[l.id]) { t.marks = t.marks || {}; t.marks[l.id] = 'ok'; n++; } }); save('takes', t); render(); toast(n + ' line' + (n === 1 ? '' : 's') + ' marked as said'); },
